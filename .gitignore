@@ -1,0 +1,25 @@
+# Claude Code memory — local AI context, not project source
+Memory/
+
+# Local signing config — contains developer team ID, never commit
+Config/Signing.xcconfig
+
+# Xcode
+*.xcuserstate
+**/xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+DerivedData/
+build/
+*.moved-aside
+*.pbxuser
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Swift Package Manager
+.build/
+.swiftpm/

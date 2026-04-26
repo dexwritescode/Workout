@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "self:">
+   </FileRef>
+   <FileRef
+      location = "group:README.md">
+   </FileRef>
+   <FileRef
+      location = "group:EXERCISE_DATABASE_SPEC.md">
+   </FileRef>
+   <FileRef
+      location = "group:TECHNICAL_PLAN.md">
+   </FileRef>
+   <FileRef
+      location = "group:PHASE1_CHECKLIST.md">
+   </FileRef>
+   <FileRef
+      location = "group:PR1_NOTES.md">
+   </FileRef>
+   <FileRef
+      location = "group:ModelsEnums.swift">
+   </FileRef>
+</Workspace>

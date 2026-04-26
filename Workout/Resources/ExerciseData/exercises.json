@@ -1,0 +1,981 @@
+{
+  "exercises": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "name": "Barbell Bench Press",
+      "description": "A compound chest exercise performed lying on a flat bench, pressing a barbell from chest level to full arm extension.",
+      "instructions": [
+        "Lie flat on a bench with feet firmly on the ground",
+        "Grip the barbell slightly wider than shoulder width",
+        "Unrack the bar and hold it above your chest with arms extended",
+        "Lower the bar to your mid-chest in a controlled manner",
+        "Press the bar back up to the starting position",
+        "Keep your shoulder blades retracted throughout the movement"
+      ],
+      "equipment": ["Barbell", "Flat Bench"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Triceps", "Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440002",
+      "name": "Incline Dumbbell Press",
+      "description": "An upper chest exercise performed on an incline bench with dumbbells, emphasizing the clavicular head of the pectorals.",
+      "instructions": [
+        "Set an adjustable bench to a 30-45 degree incline",
+        "Sit back with a dumbbell in each hand resting on your thighs",
+        "Kick the dumbbells up to shoulder level as you lean back",
+        "Press the dumbbells upward until your arms are fully extended",
+        "Lower the dumbbells slowly to chest level with elbows at roughly 45 degrees",
+        "Repeat for the desired number of repetitions"
+      ],
+      "equipment": ["Dumbbell", "Incline Bench"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Shoulders", "Triceps"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440003",
+      "name": "Decline Barbell Press",
+      "description": "A chest pressing movement performed on a decline bench, targeting the lower portion of the pectorals.",
+      "instructions": [
+        "Secure your legs at the end of a decline bench and lie back",
+        "Grip the barbell at slightly wider than shoulder width",
+        "Unrack the bar and lower it to your lower chest",
+        "Press the bar back up to full arm extension",
+        "Keep your core braced throughout the movement"
+      ],
+      "equipment": ["Barbell", "Decline Bench"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Triceps", "Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440004",
+      "name": "Push-ups",
+      "description": "A classic bodyweight exercise that builds chest, shoulder, and tricep strength using your own body as resistance.",
+      "instructions": [
+        "Start in a high plank position with hands slightly wider than shoulder width",
+        "Keep your body in a straight line from head to heels",
+        "Lower your chest toward the floor by bending your elbows",
+        "Push back up to the starting position by extending your arms",
+        "Maintain a tight core throughout the movement"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Triceps", "Shoulders"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440005",
+      "name": "Cable Flyes",
+      "description": "An isolation exercise for the chest performed using cable pulleys, providing constant tension throughout the range of motion.",
+      "instructions": [
+        "Set both cable pulleys to shoulder height",
+        "Grab one handle in each hand and step forward into a staggered stance",
+        "Start with arms extended out to the sides with a slight bend in the elbows",
+        "Bring your hands together in front of your chest in a hugging motion",
+        "Slowly return to the starting position under control"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440006",
+      "name": "Dumbbell Flyes",
+      "description": "A chest isolation exercise performed lying on a flat bench, opening the arms wide to stretch and contract the pectorals.",
+      "instructions": [
+        "Lie flat on a bench holding a dumbbell in each hand above your chest",
+        "Keep a slight bend in your elbows throughout the movement",
+        "Lower the dumbbells out to the sides in a wide arc",
+        "Lower until you feel a stretch in your chest",
+        "Bring the dumbbells back together above your chest in the same arc"
+      ],
+      "equipment": ["Dumbbell", "Flat Bench"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Shoulders"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440007",
+      "name": "Chest Dips",
+      "description": "A compound bodyweight exercise performed on parallel bars with a forward lean to emphasize chest activation.",
+      "instructions": [
+        "Grip the parallel bars and lift yourself to the starting position with arms extended",
+        "Lean your torso forward approximately 30 degrees",
+        "Lower your body by bending your elbows until you feel a stretch in your chest",
+        "Push yourself back up to the starting position",
+        "Keep your elbows flared slightly outward to target the chest"
+      ],
+      "equipment": ["Dip Station"],
+      "primaryMuscles": ["Chest"],
+      "secondaryMuscles": ["Triceps", "Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440008",
+      "name": "Barbell Deadlift",
+      "description": "A fundamental compound exercise that targets the entire posterior chain by lifting a loaded barbell from the floor to hip level.",
+      "instructions": [
+        "Stand with feet hip-width apart with the barbell over mid-foot",
+        "Bend at the hips and knees to grip the bar just outside your legs",
+        "Keep your chest up and back flat as you brace your core",
+        "Drive through your heels and extend your hips and knees to lift the bar",
+        "Stand tall at the top with shoulders back and hips fully extended",
+        "Lower the bar back to the floor in a controlled manner"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Lats", "Lower Back"],
+      "secondaryMuscles": ["Glutes", "Hamstrings", "Traps", "Forearms"],
+      "difficultyLevel": "Advanced"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440009",
+      "name": "Pull-ups",
+      "description": "A compound upper body pulling exercise performed by hanging from a bar and pulling yourself up until your chin clears the bar.",
+      "instructions": [
+        "Grip the pull-up bar with hands slightly wider than shoulder width, palms facing away",
+        "Hang with arms fully extended and shoulders engaged",
+        "Pull yourself upward by driving your elbows down toward your hips",
+        "Continue until your chin is above the bar",
+        "Lower yourself back to the starting position under control"
+      ],
+      "equipment": ["Pull-up Bar"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440010",
+      "name": "Barbell Bent-Over Row",
+      "description": "A compound back exercise performed by rowing a barbell toward the torso while hinged at the hips, building lat and mid-back thickness.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a barbell with an overhand grip",
+        "Hinge at the hips until your torso is roughly 45 degrees to the floor",
+        "Let the bar hang at arm's length below your shoulders",
+        "Pull the bar toward your lower chest by driving your elbows back",
+        "Squeeze your shoulder blades together at the top",
+        "Lower the bar back to the starting position under control"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440011",
+      "name": "Lat Pulldown",
+      "description": "A machine-based pulling exercise that mimics the pull-up motion, targeting the latissimus dorsi muscles.",
+      "instructions": [
+        "Sit at the lat pulldown machine and adjust the thigh pad for a snug fit",
+        "Grip the bar slightly wider than shoulder width with palms facing away",
+        "Pull the bar down toward your upper chest while leaning slightly back",
+        "Squeeze your lats at the bottom of the movement",
+        "Slowly return the bar to the starting position with arms extended"
+      ],
+      "equipment": ["Lat Pulldown Machine"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440012",
+      "name": "Dumbbell Single-Arm Row",
+      "description": "A unilateral back exercise performed with one arm at a time, allowing you to focus on each side independently.",
+      "instructions": [
+        "Place one knee and the same-side hand on a flat bench for support",
+        "Hold a dumbbell in the opposite hand with arm extended",
+        "Pull the dumbbell toward your hip by driving your elbow back and up",
+        "Squeeze your lat at the top of the movement",
+        "Lower the dumbbell back to full arm extension",
+        "Complete all reps on one side before switching"
+      ],
+      "equipment": ["Dumbbell", "Flat Bench"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440013",
+      "name": "Cable Seated Row",
+      "description": "A back exercise performed on a cable row station, building mid-back thickness and lat width with constant cable tension.",
+      "instructions": [
+        "Sit at the cable row station with feet on the foot plates and knees slightly bent",
+        "Grab the handle with both hands and sit upright with arms extended",
+        "Pull the handle toward your lower chest by retracting your shoulder blades",
+        "Squeeze your back muscles at the peak contraction",
+        "Slowly extend your arms back to the starting position"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440014",
+      "name": "T-Bar Row",
+      "description": "A compound rowing movement using a landmine attachment or T-bar row machine, effectively building back thickness.",
+      "instructions": [
+        "Straddle the T-bar with feet shoulder-width apart",
+        "Hinge at the hips and grip the handles with both hands",
+        "Keep your back flat and chest up",
+        "Pull the weight toward your chest by driving your elbows back",
+        "Squeeze your shoulder blades together at the top",
+        "Lower the weight back down under control"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Traps", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440015",
+      "name": "Chin-ups",
+      "description": "A bodyweight pulling exercise similar to pull-ups but with an underhand grip, placing greater emphasis on the biceps.",
+      "instructions": [
+        "Grip the pull-up bar with hands shoulder-width apart, palms facing toward you",
+        "Hang with arms fully extended and shoulders engaged",
+        "Pull yourself upward by driving your elbows down",
+        "Continue until your chin is above the bar",
+        "Lower yourself back to the starting position under control"
+      ],
+      "equipment": ["Pull-up Bar"],
+      "primaryMuscles": ["Lats"],
+      "secondaryMuscles": ["Biceps", "Forearms"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440016",
+      "name": "Barbell Overhead Press",
+      "description": "A compound shoulder exercise performed by pressing a barbell from shoulder level to overhead, building pressing strength and shoulder mass.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a barbell at shoulder height",
+        "Grip the bar slightly wider than shoulder width with palms facing forward",
+        "Brace your core and squeeze your glutes",
+        "Press the bar overhead until your arms are fully extended",
+        "Move your head slightly forward once the bar clears it",
+        "Lower the bar back to shoulder height under control"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Triceps", "Traps"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440017",
+      "name": "Dumbbell Shoulder Press",
+      "description": "A seated or standing pressing movement with dumbbells that develops all three heads of the deltoids.",
+      "instructions": [
+        "Sit on a bench with back support or stand with feet shoulder-width apart",
+        "Hold a dumbbell in each hand at shoulder height with palms facing forward",
+        "Press the dumbbells overhead until your arms are fully extended",
+        "Lower the dumbbells back to shoulder height under control",
+        "Avoid arching your lower back excessively"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Triceps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440018",
+      "name": "Dumbbell Lateral Raise",
+      "description": "An isolation exercise that targets the lateral head of the deltoid, creating shoulder width and the capped shoulder look.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a dumbbell in each hand at your sides",
+        "Keep a slight bend in your elbows throughout the movement",
+        "Raise both dumbbells out to the sides until your arms are parallel to the floor",
+        "Hold briefly at the top, then lower the dumbbells back to your sides",
+        "Avoid swinging or using momentum to lift the weights"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440019",
+      "name": "Dumbbell Front Raise",
+      "description": "An isolation exercise targeting the anterior deltoid by raising dumbbells to the front of the body.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a dumbbell in each hand in front of your thighs",
+        "Keep a slight bend in your elbows",
+        "Raise one or both dumbbells in front of you to shoulder height",
+        "Hold briefly at the top, then lower under control",
+        "Avoid swinging the weights or leaning back"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Chest"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440020",
+      "name": "Face Pulls",
+      "description": "A cable exercise that targets the rear deltoids and upper back, improving posture and shoulder health.",
+      "instructions": [
+        "Set a cable pulley to upper chest or face height with a rope attachment",
+        "Grip the rope with both hands using an overhand grip",
+        "Step back to create tension in the cable",
+        "Pull the rope toward your face, separating your hands as you pull",
+        "Squeeze your rear deltoids and upper back at the peak contraction",
+        "Return to the starting position under control"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440021",
+      "name": "Dumbbell Reverse Fly",
+      "description": "An isolation exercise for the rear deltoids performed bent over, strengthening the posterior shoulder and upper back.",
+      "instructions": [
+        "Stand with feet shoulder-width apart, hinge at the hips with a flat back",
+        "Hold a dumbbell in each hand with arms hanging below your chest",
+        "Keep a slight bend in your elbows",
+        "Raise the dumbbells out to the sides by squeezing your rear deltoids",
+        "Lower the dumbbells back to the starting position under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Shoulders"],
+      "secondaryMuscles": ["Traps"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440022",
+      "name": "Barbell Curl",
+      "description": "A classic bicep exercise performed by curling a barbell from hip level to shoulder level, building bicep size and strength.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a barbell with an underhand grip",
+        "Keep your elbows pinned to your sides",
+        "Curl the barbell up toward your shoulders by contracting your biceps",
+        "Squeeze at the top of the movement",
+        "Lower the barbell back to the starting position under control"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Biceps"],
+      "secondaryMuscles": ["Forearms"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440023",
+      "name": "Dumbbell Curl",
+      "description": "A unilateral or bilateral bicep exercise using dumbbells, allowing for supination and natural arm movement.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a dumbbell in each hand at your sides",
+        "Keep your elbows close to your body",
+        "Curl the dumbbells up toward your shoulders, rotating your palms upward",
+        "Squeeze your biceps at the top",
+        "Lower the dumbbells back to the starting position under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Biceps"],
+      "secondaryMuscles": ["Forearms"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440024",
+      "name": "Hammer Curl",
+      "description": "A bicep curl variation performed with a neutral grip that also targets the brachialis and brachioradialis muscles.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a dumbbell in each hand with palms facing each other",
+        "Keep your elbows pinned to your sides",
+        "Curl the dumbbells up toward your shoulders while maintaining the neutral grip",
+        "Squeeze at the top of the movement",
+        "Lower the dumbbells back to the starting position under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Biceps"],
+      "secondaryMuscles": ["Forearms"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440025",
+      "name": "Preacher Curl",
+      "description": "An isolation bicep exercise performed on a preacher bench that eliminates momentum and emphasizes the bicep peak.",
+      "instructions": [
+        "Sit at a preacher curl bench with your upper arms resting on the pad",
+        "Grip the EZ curl bar with an underhand grip",
+        "Start with your arms fully extended on the pad",
+        "Curl the bar upward by contracting your biceps",
+        "Squeeze at the top, then lower the bar back to full extension",
+        "Avoid letting your elbows lift off the pad"
+      ],
+      "equipment": ["EZ Curl Bar", "Flat Bench"],
+      "primaryMuscles": ["Biceps"],
+      "secondaryMuscles": ["Forearms"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440026",
+      "name": "Cable Curl",
+      "description": "A bicep curl performed using a cable machine, providing constant tension throughout the entire range of motion.",
+      "instructions": [
+        "Stand facing a cable machine with the pulley set to the lowest position",
+        "Grip the straight bar or EZ bar attachment with an underhand grip",
+        "Keep your elbows pinned to your sides",
+        "Curl the bar upward by contracting your biceps",
+        "Squeeze at the top, then lower the bar back under control"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Biceps"],
+      "secondaryMuscles": ["Forearms"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440027",
+      "name": "Cable Tricep Pushdown",
+      "description": "A tricep isolation exercise performed at a cable station, pushing a handle downward to fully extend the arms.",
+      "instructions": [
+        "Stand facing a cable machine with the pulley set to the highest position",
+        "Grip the bar or rope attachment with an overhand grip",
+        "Keep your elbows pinned to your sides and upper arms stationary",
+        "Push the handle downward until your arms are fully extended",
+        "Squeeze your triceps at the bottom",
+        "Slowly return to the starting position"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440028",
+      "name": "Skull Crushers",
+      "description": "A tricep isolation exercise performed lying on a bench, lowering a barbell or EZ bar to the forehead and extending it back up.",
+      "instructions": [
+        "Lie flat on a bench holding an EZ curl bar with a narrow overhand grip",
+        "Start with arms extended directly above your chest",
+        "Keep your upper arms stationary and bend at the elbows",
+        "Lower the bar toward your forehead in a controlled manner",
+        "Extend your arms back to the starting position by contracting your triceps"
+      ],
+      "equipment": ["EZ Curl Bar", "Flat Bench"],
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440029",
+      "name": "Overhead Tricep Extension",
+      "description": "A tricep exercise performed by extending a dumbbell overhead, targeting the long head of the triceps.",
+      "instructions": [
+        "Stand or sit holding a dumbbell with both hands behind your head",
+        "Keep your upper arms close to your ears and elbows pointing forward",
+        "Extend your arms upward until the dumbbell is overhead",
+        "Squeeze your triceps at the top",
+        "Lower the dumbbell back behind your head under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440030",
+      "name": "Tricep Dips",
+      "description": "A compound bodyweight exercise on parallel bars with an upright torso to emphasize the triceps.",
+      "instructions": [
+        "Grip the parallel bars and lift yourself to the starting position with arms extended",
+        "Keep your torso upright and elbows close to your body",
+        "Lower your body by bending your elbows until they reach roughly 90 degrees",
+        "Push yourself back up to the starting position by extending your arms",
+        "Avoid flaring your elbows out to the sides"
+      ],
+      "equipment": ["Dip Station"],
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Chest", "Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440031",
+      "name": "Close-Grip Bench Press",
+      "description": "A bench press variation with a narrower grip that shifts emphasis from the chest to the triceps.",
+      "instructions": [
+        "Lie flat on a bench and grip the barbell with hands shoulder-width apart or slightly narrower",
+        "Unrack the bar and hold it above your chest with arms extended",
+        "Lower the bar to your mid-chest keeping your elbows close to your body",
+        "Press the bar back up to full extension by contracting your triceps",
+        "Keep your wrists straight throughout the movement"
+      ],
+      "equipment": ["Barbell", "Flat Bench"],
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Chest", "Shoulders"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440032",
+      "name": "Wrist Curls",
+      "description": "A forearm exercise performed by curling the wrist upward while holding a dumbbell, targeting the wrist flexors.",
+      "instructions": [
+        "Sit on a bench with your forearms resting on your thighs, wrists hanging over your knees",
+        "Hold a dumbbell in each hand with palms facing up",
+        "Let the dumbbells roll down to your fingertips",
+        "Curl the dumbbells back up by flexing your wrists",
+        "Squeeze at the top and lower under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Forearms"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440033",
+      "name": "Reverse Wrist Curls",
+      "description": "A forearm exercise targeting the wrist extensors by curling the wrists upward with an overhand grip.",
+      "instructions": [
+        "Sit on a bench with your forearms resting on your thighs, wrists hanging over your knees",
+        "Hold a dumbbell in each hand with palms facing down",
+        "Lower the dumbbells by flexing your wrists downward",
+        "Curl the dumbbells back up by extending your wrists",
+        "Squeeze at the top and lower under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Forearms"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440034",
+      "name": "Barbell Back Squat",
+      "description": "A fundamental compound lower body exercise that targets the quadriceps, glutes, and hamstrings by squatting down with a barbell across the upper back.",
+      "instructions": [
+        "Position the barbell on your upper traps and rear delts in a squat rack",
+        "Stand with feet shoulder-width apart, toes slightly pointed out",
+        "Take a deep breath and brace your core",
+        "Descend by breaking at the hips and knees simultaneously",
+        "Lower until thighs are at least parallel to the ground",
+        "Drive through your heels to stand back up"
+      ],
+      "equipment": ["Barbell", "Squat Rack"],
+      "primaryMuscles": ["Quadriceps", "Glutes"],
+      "secondaryMuscles": ["Hamstrings", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440035",
+      "name": "Front Squat",
+      "description": "A squat variation with the barbell resting on the front of the shoulders, placing greater emphasis on the quadriceps and requiring more core stability.",
+      "instructions": [
+        "Position the barbell across the front of your shoulders in a clean grip or cross-arm grip",
+        "Stand with feet shoulder-width apart",
+        "Keep your elbows high and chest up throughout the movement",
+        "Descend into a deep squat while keeping your torso as upright as possible",
+        "Drive through your heels to stand back up"
+      ],
+      "equipment": ["Barbell", "Squat Rack"],
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Glutes", "Abs"],
+      "difficultyLevel": "Advanced"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440036",
+      "name": "Leg Press",
+      "description": "A machine-based compound lower body exercise that allows you to push heavy loads safely while targeting the quadriceps and glutes.",
+      "instructions": [
+        "Sit in the leg press machine with your back flat against the pad",
+        "Place your feet shoulder-width apart on the foot platform",
+        "Release the safety handles and lower the platform toward your chest",
+        "Descend until your knees are at approximately 90 degrees",
+        "Push the platform back up by extending your legs without locking your knees"
+      ],
+      "equipment": ["Leg Press Machine"],
+      "primaryMuscles": ["Quadriceps", "Glutes"],
+      "secondaryMuscles": ["Hamstrings"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440037",
+      "name": "Leg Extension",
+      "description": "An isolation exercise for the quadriceps performed on a machine by extending the legs from a bent to straight position.",
+      "instructions": [
+        "Sit on the leg extension machine with your back against the pad",
+        "Adjust the pad so it rests on your lower shins just above the ankles",
+        "Grip the handles on the sides of the seat",
+        "Extend your legs until they are straight without locking your knees",
+        "Squeeze your quadriceps at the top, then lower under control"
+      ],
+      "equipment": ["Leg Extension Machine"],
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440038",
+      "name": "Bulgarian Split Squat",
+      "description": "A single-leg squat variation with the rear foot elevated on a bench, challenging balance, stability, and unilateral leg strength.",
+      "instructions": [
+        "Stand about two feet in front of a flat bench facing away from it",
+        "Place the top of one foot on the bench behind you",
+        "Hold a dumbbell in each hand at your sides",
+        "Lower your body by bending your front knee until your thigh is parallel to the floor",
+        "Drive through your front heel to return to the starting position",
+        "Complete all reps on one side before switching"
+      ],
+      "equipment": ["Dumbbell", "Flat Bench"],
+      "primaryMuscles": ["Quadriceps", "Glutes"],
+      "secondaryMuscles": ["Hamstrings"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440039",
+      "name": "Walking Lunges",
+      "description": "A dynamic lower body exercise performed by stepping forward into alternating lunges while traveling across the floor.",
+      "instructions": [
+        "Stand tall with a dumbbell in each hand at your sides",
+        "Step forward with one leg and lower your body until both knees are at 90 degrees",
+        "Keep your front knee tracking over your toes without passing them",
+        "Push off your front foot and step forward with the opposite leg",
+        "Continue alternating legs as you walk forward"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Quadriceps", "Glutes"],
+      "secondaryMuscles": ["Hamstrings"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440040",
+      "name": "Romanian Deadlift",
+      "description": "A hip-hinge exercise focusing on the hamstrings and lower back by lowering a barbell along the legs while keeping them nearly straight.",
+      "instructions": [
+        "Stand with feet hip-width apart holding a barbell in front of your thighs",
+        "Keep a slight bend in your knees throughout the movement",
+        "Hinge at the hips and push them back as you lower the bar along your legs",
+        "Lower until you feel a deep stretch in your hamstrings",
+        "Drive your hips forward to return to the starting position",
+        "Keep your back flat and chest up throughout"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Hamstrings"],
+      "secondaryMuscles": ["Glutes", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440041",
+      "name": "Lying Leg Curl",
+      "description": "An isolation exercise for the hamstrings performed face-down on a leg curl machine by curling the weight toward the glutes.",
+      "instructions": [
+        "Lie face down on the leg curl machine with the pad just above your heels",
+        "Grip the handles on the sides of the bench",
+        "Curl your legs upward by contracting your hamstrings",
+        "Squeeze at the top when the pad is near your glutes",
+        "Lower the weight back to the starting position under control"
+      ],
+      "equipment": ["Leg Curl Machine"],
+      "primaryMuscles": ["Hamstrings"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440042",
+      "name": "Good Mornings",
+      "description": "A barbell hip-hinge exercise that strengthens the hamstrings and lower back by bowing forward while keeping the legs relatively straight.",
+      "instructions": [
+        "Position a barbell across your upper traps as you would for a squat",
+        "Stand with feet shoulder-width apart and a slight bend in your knees",
+        "Hinge at the hips and lean your torso forward while keeping your back flat",
+        "Lower until your torso is nearly parallel to the floor",
+        "Drive your hips forward to return to the upright position"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Hamstrings", "Lower Back"],
+      "secondaryMuscles": ["Glutes"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440043",
+      "name": "Dumbbell Stiff-Leg Deadlift",
+      "description": "A hamstring-focused deadlift variation using dumbbells with minimal knee bend, emphasizing the stretch and contraction of the hamstrings.",
+      "instructions": [
+        "Stand with feet hip-width apart holding a dumbbell in each hand in front of your thighs",
+        "Keep your legs nearly straight with only a slight knee bend",
+        "Hinge at the hips and lower the dumbbells along your legs",
+        "Lower until you feel a strong stretch in your hamstrings",
+        "Drive your hips forward to return to standing"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Hamstrings"],
+      "secondaryMuscles": ["Glutes", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440044",
+      "name": "Barbell Hip Thrust",
+      "description": "A glute-focused exercise performed by driving the hips upward against a loaded barbell while the upper back is supported on a bench.",
+      "instructions": [
+        "Sit on the floor with your upper back resting against a flat bench",
+        "Roll a loaded barbell over your legs until it sits on your hip crease",
+        "Plant your feet flat on the floor about shoulder-width apart",
+        "Drive your hips upward by squeezing your glutes until your body forms a straight line from shoulders to knees",
+        "Hold the top position briefly, then lower your hips back down under control"
+      ],
+      "equipment": ["Barbell", "Flat Bench"],
+      "primaryMuscles": ["Glutes"],
+      "secondaryMuscles": ["Hamstrings"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440045",
+      "name": "Glute Bridge",
+      "description": "A bodyweight glute activation exercise performed lying on the floor by driving the hips upward toward the ceiling.",
+      "instructions": [
+        "Lie face up on the floor with your knees bent and feet flat on the ground",
+        "Keep your arms at your sides with palms facing down",
+        "Drive through your heels and squeeze your glutes to lift your hips off the floor",
+        "Raise your hips until your body forms a straight line from shoulders to knees",
+        "Hold at the top briefly, then lower back down under control"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Glutes"],
+      "secondaryMuscles": ["Hamstrings"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440046",
+      "name": "Cable Pull-Through",
+      "description": "A hip-hinge exercise performed facing away from a cable machine, driving the hips forward to extend and target the glutes.",
+      "instructions": [
+        "Set a cable pulley to the lowest position with a rope attachment",
+        "Straddle the cable facing away from the machine and grab the rope between your legs",
+        "Walk forward a few steps to create tension",
+        "Hinge at the hips and let the cable pull your hands back between your legs",
+        "Drive your hips forward and squeeze your glutes to stand tall"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Glutes"],
+      "secondaryMuscles": ["Hamstrings", "Lower Back"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440047",
+      "name": "Kettlebell Swing",
+      "description": "An explosive hip-hinge movement using a kettlebell that develops power in the glutes and hamstrings while improving cardiovascular conditioning.",
+      "instructions": [
+        "Stand with feet slightly wider than shoulder-width apart with a kettlebell on the floor in front of you",
+        "Hinge at the hips and grip the kettlebell with both hands",
+        "Hike the kettlebell back between your legs",
+        "Explosively drive your hips forward to swing the kettlebell up to chest height",
+        "Let the kettlebell swing back between your legs and repeat"
+      ],
+      "equipment": ["Kettlebell"],
+      "primaryMuscles": ["Glutes"],
+      "secondaryMuscles": ["Hamstrings", "Lower Back"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440048",
+      "name": "Standing Calf Raise",
+      "description": "An isolation exercise for the calves performed by raising onto the balls of the feet while standing, targeting the gastrocnemius muscle.",
+      "instructions": [
+        "Stand on a raised platform or step with the balls of your feet on the edge",
+        "Let your heels drop below the platform to get a full stretch",
+        "Hold a dumbbell in one hand or use bodyweight for resistance",
+        "Raise up onto your toes as high as possible by contracting your calves",
+        "Hold briefly at the top, then lower your heels back down under control"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Calves"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440049",
+      "name": "Seated Calf Raise",
+      "description": "A calf exercise performed in a seated position that specifically targets the soleus muscle of the lower leg.",
+      "instructions": [
+        "Sit on a seated calf raise machine with the pad on your lower thighs",
+        "Place the balls of your feet on the foot platform",
+        "Release the safety lever",
+        "Lower your heels as far as possible for a full stretch",
+        "Push up through the balls of your feet and squeeze your calves at the top"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Calves"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440050",
+      "name": "Barbell Shrugs",
+      "description": "A trap isolation exercise performed by shrugging the shoulders upward while holding a barbell, building upper trap mass.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a barbell in front of your thighs with an overhand grip",
+        "Keep your arms straight throughout the movement",
+        "Elevate your shoulders straight up toward your ears",
+        "Squeeze your traps at the top and hold briefly",
+        "Lower your shoulders back to the starting position under control"
+      ],
+      "equipment": ["Barbell"],
+      "primaryMuscles": ["Traps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440051",
+      "name": "Dumbbell Shrugs",
+      "description": "A trap exercise using dumbbells, allowing a greater range of motion than barbell shrugs and more natural shoulder movement.",
+      "instructions": [
+        "Stand with feet shoulder-width apart holding a dumbbell in each hand at your sides",
+        "Keep your arms straight and your chest up",
+        "Shrug your shoulders upward toward your ears",
+        "Squeeze your traps at the top and hold briefly",
+        "Lower your shoulders back down under control"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Traps"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440052",
+      "name": "Farmer's Walk",
+      "description": "A loaded carry exercise that builds grip strength, trap size, and total-body stability by walking while holding heavy weights.",
+      "instructions": [
+        "Stand between two heavy dumbbells or kettlebells",
+        "Bend down and grip one in each hand",
+        "Stand tall with shoulders back and core braced",
+        "Walk forward in a straight line with controlled, even steps",
+        "Maintain an upright posture and avoid leaning to either side",
+        "Walk for the prescribed distance or time, then set the weights down"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Traps"],
+      "secondaryMuscles": ["Forearms", "Abs"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440053",
+      "name": "Back Extension",
+      "description": "A lower back exercise performed on a hyperextension bench by hinging at the hips and extending the torso back to a straight position.",
+      "instructions": [
+        "Position yourself on a hyperextension bench with your hips on the pad and feet secured",
+        "Cross your arms over your chest or place your hands behind your head",
+        "Lower your torso toward the floor by hinging at the hips",
+        "Lower until your torso is roughly perpendicular to the floor",
+        "Raise your torso back up until your body forms a straight line",
+        "Avoid hyperextending beyond a neutral spine position"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Lower Back"],
+      "secondaryMuscles": ["Glutes", "Hamstrings"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440054",
+      "name": "Reverse Hyperextension",
+      "description": "A lower back and glute exercise where the legs are raised behind the body while the torso remains stationary, decompressing the spine.",
+      "instructions": [
+        "Lie face down on a flat bench or reverse hyper machine with your hips at the edge",
+        "Grip the sides of the bench or the handles for stability",
+        "Let your legs hang straight down toward the floor",
+        "Raise your legs by squeezing your glutes and lower back until they are in line with your torso",
+        "Lower your legs back down under control"
+      ],
+      "equipment": ["Flat Bench"],
+      "primaryMuscles": ["Lower Back"],
+      "secondaryMuscles": ["Glutes", "Hamstrings"],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440055",
+      "name": "Plank",
+      "description": "An isometric core exercise where you hold a push-up-like position on your forearms, building deep core stability and endurance.",
+      "instructions": [
+        "Start on the floor on your forearms and toes",
+        "Keep your elbows directly under your shoulders",
+        "Maintain a straight line from your head to your heels",
+        "Brace your core and squeeze your glutes",
+        "Hold the position for the prescribed duration without letting your hips sag or pike up"
+      ],
+      "equipment": ["Bodyweight"],
+      "primaryMuscles": ["Abs"],
+      "secondaryMuscles": ["Lower Back"],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440056",
+      "name": "Cable Crunches",
+      "description": "A weighted abdominal exercise performed kneeling at a cable station, using the cable resistance to intensify the crunch motion.",
+      "instructions": [
+        "Kneel in front of a cable machine with the pulley set to the highest position",
+        "Grip the rope attachment and hold it beside your head",
+        "Curl your torso downward by contracting your abs, bringing your elbows toward your knees",
+        "Squeeze your abs at the bottom of the movement",
+        "Slowly return to the upright kneeling position"
+      ],
+      "equipment": ["Cable Machine"],
+      "primaryMuscles": ["Abs"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440057",
+      "name": "Hanging Leg Raise",
+      "description": "An advanced abdominal exercise performed by raising the legs while hanging from a pull-up bar, targeting the lower abs.",
+      "instructions": [
+        "Hang from a pull-up bar with an overhand grip and arms fully extended",
+        "Keep your legs straight or slightly bent",
+        "Raise your legs by flexing at the hips until they are parallel to the floor or higher",
+        "Squeeze your abs at the top of the movement",
+        "Lower your legs back to the starting position under control",
+        "Avoid swinging or using momentum"
+      ],
+      "equipment": ["Pull-up Bar"],
+      "primaryMuscles": ["Abs"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Advanced"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440058",
+      "name": "Russian Twist",
+      "description": "A rotational core exercise performed seated on the floor, twisting the torso side to side to target the obliques and deep core muscles.",
+      "instructions": [
+        "Sit on the floor with your knees bent and feet slightly elevated",
+        "Lean your torso back to about a 45-degree angle",
+        "Hold a dumbbell or medicine ball with both hands in front of your chest",
+        "Rotate your torso to one side, bringing the weight beside your hip",
+        "Rotate to the opposite side in a controlled manner",
+        "Continue alternating sides for the prescribed repetitions"
+      ],
+      "equipment": ["Dumbbell"],
+      "primaryMuscles": ["Abs"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Intermediate"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440059",
+      "name": "Neck Curl",
+      "description": "An isolation exercise for the front of the neck performed lying face up, strengthening the neck flexors for injury prevention.",
+      "instructions": [
+        "Lie face up on a flat bench with your head hanging off the edge",
+        "Place a light weight plate on your forehead, holding it with both hands",
+        "Let your head drop back slightly below the level of the bench",
+        "Curl your head forward by tucking your chin toward your chest",
+        "Lower your head back to the starting position under control"
+      ],
+      "equipment": ["Flat Bench"],
+      "primaryMuscles": ["Neck"],
+      "secondaryMuscles": [],
+      "difficultyLevel": "Beginner"
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440060",
+      "name": "Neck Extension",
+      "description": "An isolation exercise for the rear of the neck performed lying face down, strengthening the neck extensors and upper traps.",
+      "instructions": [
+        "Lie face down on a flat bench with your head hanging off the edge",
+        "Place a light weight plate on the back of your head, holding it with both hands",
+        "Let your head drop forward slightly below the level of the bench",
+        "Extend your head upward by contracting the muscles on the back of your neck",
+        "Lower your head back to the starting position under control"
+      ],
+      "equipment": ["Flat Bench"],
+      "primaryMuscles": ["Neck"],
+      "secondaryMuscles": ["Traps"],
+      "difficultyLevel": "Beginner"
+    }
+  ]
+}

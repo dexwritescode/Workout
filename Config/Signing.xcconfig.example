@@ -1,0 +1,13 @@
+// Local signing configuration — copy this file to Signing.xcconfig and fill in your values.
+// Signing.xcconfig is gitignored and will never be committed.
+//
+// DEVELOPMENT_TEAM: Your 10-character Apple Developer Team ID (found at developer.apple.com → Membership).
+//   Leave blank to build for Simulator only (no Apple account required).
+//
+// BUNDLE_ID_PREFIX: Reverse-domain prefix for bundle identifiers.
+//   Common choices: com.yourname  |  io.github.yourname  |  com.example
+//
+// After copying, open Workout.xcodeproj — Xcode picks up these values automatically.
+
+DEVELOPMENT_TEAM =
+BUNDLE_ID_PREFIX = com.example

@@ -41,6 +41,8 @@ gh pr create --title "..." --body "..."
 
 - Branch directly off `main`; keep branches short-lived
 - CI runs build + tests on every PR — do not merge a PR with failing checks
+- Never add a "Test plan" section to PR descriptions
+- Never add `Co-authored-by` trailers to commits or PR descriptions
 
 ## Architecture
 

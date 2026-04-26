@@ -28,6 +28,20 @@ xcodebuild test -scheme Workout -destination 'platform=iOS Simulator,OS=latest' 
 
 No linter is configured.
 
+## Git workflow
+
+`main` is a protected branch — direct pushes and force pushes are blocked. All changes must go through a branch and PR:
+
+```bash
+git checkout -b <type>/<short-description>   # e.g. feat/rest-timer-adjustments
+# ... make changes, commit ...
+git push -u origin <branch>
+gh pr create --title "..." --body "..."
+```
+
+- Branch directly off `main`; keep branches short-lived
+- CI runs build + tests on every PR — do not merge a PR with failing checks
+
 ## Architecture
 
 **Pattern**: MVVM + Services — `SwiftData Models → Services → ViewModels → SwiftUI Views`

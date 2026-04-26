@@ -2,14 +2,13 @@
 //  TemplateEditorView.swift
 //  Workout
 //
-//  Created by Dexter Darwich on 2025-12-30.
+//  Create or edit a workout template: name, description,
+//  and an exercise list with drag-to-reorder support.
 //
 
 import SwiftUI
 import SwiftData
 
-/// Form for creating or editing a workout template.
-/// Allows setting name, description, and managing exercises with sets/reps.
 struct TemplateEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -21,7 +20,6 @@ struct TemplateEditorView: View {
 
     private let existingTemplate: WorkoutTemplate?
 
-    /// Tracks an exercise to be added to the template with configurable sets/reps
     struct ExerciseEntry: Identifiable {
         let id = UUID()
         let exercise: Exercise
@@ -31,7 +29,7 @@ struct TemplateEditorView: View {
         var restSeconds: Int
     }
 
-    // MARK: - Create Mode
+    // MARK: - Init
 
     init() {
         self.existingTemplate = nil
@@ -39,8 +37,6 @@ struct TemplateEditorView: View {
         _templateDescription = State(initialValue: "")
         _exerciseEntries = State(initialValue: [])
     }
-
-    // MARK: - Edit Mode
 
     init(template: WorkoutTemplate) {
         self.existingTemplate = template
@@ -66,58 +62,51 @@ struct TemplateEditorView: View {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !exerciseEntries.isEmpty
     }
 
-    private var isEditing: Bool {
-        existingTemplate != nil
-    }
+    private var isEditing: Bool { existingTemplate != nil }
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Header
-                    Text(isEditing ? "Edit Template" : "New Template")
-                        .font(.system(size: 26, weight: .heavy))
+            Form {
+                // Details
+                Section {
+                    TextField("Template Name", text: $name)
+                        .font(.system(size: 16))
                         .foregroundStyle(AppStyle.Colors.text)
-                        .padding(.bottom, 20)
 
-                    // Details
-                    cardSection("Details") {
-                        VStack(spacing: 0) {
-                            TextField("Template Name", text: $name)
-                                .font(.system(size: 16))
-                                .foregroundStyle(AppStyle.Colors.text)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 13)
+                    TextField("Description (optional)", text: $templateDescription)
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppStyle.Colors.text)
+                } header: {
+                    Text("Details").sectionHeader()
+                }
+                .listRowBackground(AppStyle.Colors.surface1)
+                .listRowSeparatorTint(AppStyle.Colors.border)
 
-                            AppStyle.Colors.border.frame(height: 1).padding(.leading, 16)
-
-                            TextField("Description (optional)", text: $templateDescription)
-                                .font(.system(size: 16))
-                                .foregroundStyle(AppStyle.Colors.text)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 13)
+                // Exercises
+                Section {
+                    if exerciseEntries.isEmpty {
+                        Text("No exercises added yet")
+                            .font(.system(size: 15))
+                            .foregroundStyle(AppStyle.Colors.textTertiary)
+                            .listRowBackground(AppStyle.Colors.surface1)
+                    } else {
+                        ForEach($exerciseEntries) { $entry in
+                            exerciseEntryRow(entry: $entry)
+                                .listRowBackground(AppStyle.Colors.surface1)
+                                .listRowSeparatorTint(AppStyle.Colors.border)
+                        }
+                        .onMove { from, to in
+                            exerciseEntries.move(fromOffsets: from, toOffset: to)
                         }
                     }
+                } header: {
+                    Text("Exercises").sectionHeader()
+                }
 
-                    // Exercises
-                    cardSection("Exercises") {
-                        if exerciseEntries.isEmpty {
-                            Text("No exercises added yet")
-                                .font(.system(size: 15))
-                                .foregroundStyle(AppStyle.Colors.textTertiary)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-                        } else {
-                            ForEach(Array(exerciseEntries.enumerated()), id: \.element.id) { index, _ in
-                                if index > 0 {
-                                    AppStyle.Colors.border.frame(height: 1).padding(.leading, 16)
-                                }
-                                exerciseEntryRow(entry: $exerciseEntries[index], index: index)
-                            }
-                        }
-                    }
-
-                    // Add Exercise button
+                // Add Exercise
+                Section {
                     Button {
                         showExercisePicker = true
                     } label: {
@@ -128,40 +117,24 @@ struct TemplateEditorView: View {
                                 .font(.system(size: 16, weight: .semibold))
                         }
                         .foregroundStyle(AppStyle.Colors.brand)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(AppStyle.Colors.brand.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                                .stroke(AppStyle.Colors.brand.opacity(0.25), lineWidth: 1)
-                        )
                     }
-                    .padding(.bottom, 16)
-
-                    // Save button
-                    Button {
-                        save()
-                    } label: {
-                        Text("Save Template")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(isValid ? AppStyle.Colors.text : AppStyle.Colors.textTertiary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                            .background(isValid ? AppStyle.Colors.brand : AppStyle.Colors.surface3)
-                            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-                    }
-                    .disabled(!isValid)
-                    .padding(.bottom, 24)
+                    .listRowBackground(AppStyle.Colors.surface1)
                 }
-                .padding(.horizontal, 16)
             }
+            .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle(isEditing ? "Edit Template" : "New Template")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                         .foregroundStyle(AppStyle.Colors.textSecondary)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Save") { save() }
+                        .fontWeight(.bold)
+                        .disabled(!isValid)
                 }
             }
             .sheet(isPresented: $showExercisePicker) {
@@ -178,30 +151,9 @@ struct TemplateEditorView: View {
         }
     }
 
-    // MARK: - Card Section
-
-    private func cardSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .sectionHeader()
-                .padding(.leading, 4)
-
-            VStack(spacing: 0) {
-                content()
-            }
-            .background(AppStyle.Colors.surface1)
-            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                    .stroke(AppStyle.Colors.border, lineWidth: 1)
-            )
-        }
-        .padding(.bottom, 20)
-    }
-
     // MARK: - Exercise Entry Row
 
-    private func exerciseEntryRow(entry: Binding<ExerciseEntry>, index: Int) -> some View {
+    private func exerciseEntryRow(entry: Binding<ExerciseEntry>, index: Int? = nil) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -214,7 +166,9 @@ struct TemplateEditorView: View {
                 }
                 Spacer()
                 Button {
-                    exerciseEntries.remove(at: index)
+                    if let idx = exerciseEntries.firstIndex(where: { $0.id == entry.id }) {
+                        exerciseEntries.remove(at: idx)
+                    }
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 14))
@@ -228,7 +182,6 @@ struct TemplateEditorView: View {
                 stepperControl(label: "Reps", value: entry.targetReps, range: 1...30)
             }
 
-            // Weight input
             HStack(spacing: 8) {
                 Text("Weight")
                     .font(.system(size: 13, weight: .medium))
@@ -252,9 +205,7 @@ struct TemplateEditorView: View {
             .background(AppStyle.Colors.surface2)
             .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.small))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .animation(.easeInOut(duration: 0.2), value: exerciseEntries.count)
+        .padding(.vertical, 4)
     }
 
     private func stepperControl(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
@@ -295,7 +246,7 @@ struct TemplateEditorView: View {
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.small))
     }
 
-    // MARK: - Actions
+    // MARK: - Save
 
     private func save() {
         if let existing = existingTemplate {
@@ -331,12 +282,10 @@ struct TemplateEditorView: View {
         template.name = name.trimmingCharacters(in: .whitespaces)
         template.templateDescription = templateDescription.trimmingCharacters(in: .whitespaces)
 
-        // Remove old template exercises
         for te in template.exercises {
             modelContext.delete(te)
         }
 
-        // Create new ones in current order
         for (index, entry) in exerciseEntries.enumerated() {
             let te = TemplateExercise(
                 order: index,
@@ -354,5 +303,5 @@ struct TemplateEditorView: View {
 
 #Preview("Create") {
     TemplateEditorView()
-        .modelContainer(for: WorkoutTemplate.self, inMemory: true)
+        .modelContainer(for: [WorkoutTemplate.self, Exercise.self], inMemory: true)
 }

@@ -35,7 +35,8 @@ jobs:
 
       - name: Test
         run: |
+          SIM=$(xcrun simctl list devices available | grep "iPhone.*Pro Max" | head -1 | grep -oE '[A-F0-9-]{36}')
           xcodebuild test \
             -scheme Workout \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination "platform=iOS Simulator,id=$SIM" \
             CODE_SIGNING_ALLOWED=NO

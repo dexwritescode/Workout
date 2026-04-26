@@ -56,9 +56,12 @@ final class TemplateExercise {
     var restSeconds: Int
     var notes: String?
     
+    @Relationship(deleteRule: .cascade, inverse: \TemplateSet.templateExercise)
+    var setTargets: [TemplateSet]
+
     var template: WorkoutTemplate?
     var exercise: Exercise?
-    
+
     init(
         id: UUID = UUID(),
         order: Int,
@@ -73,6 +76,27 @@ final class TemplateExercise {
         self.targetReps = targetReps
         self.restSeconds = restSeconds
         self.notes = notes
+        self.setTargets = []
+    }
+}
+
+// MARK: - TemplateSet
+
+/// One planned set within a TemplateExercise — lets you define different weight/reps per set.
+@Model
+final class TemplateSet {
+    @Attribute(.unique) var id: UUID
+    var order: Int
+    var targetWeight: Double
+    var targetReps: Int
+
+    var templateExercise: TemplateExercise?
+
+    init(order: Int, targetWeight: Double = 0, targetReps: Int = 10) {
+        self.id = UUID()
+        self.order = order
+        self.targetWeight = targetWeight
+        self.targetReps = targetReps
     }
 }
 

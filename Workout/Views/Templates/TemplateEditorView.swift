@@ -2,8 +2,9 @@
 //  TemplateEditorView.swift
 //  Workout
 //
-//  Create or edit a workout template: name, description,
-//  and an exercise list with drag-to-reorder support.
+//  Create or edit a workout template.
+//  Each exercise shows per-set rows (weight × reps) so you can plan
+//  warm-up sets, working sets, and drop sets independently.
 //
 
 import SwiftUI
@@ -20,13 +21,19 @@ struct TemplateEditorView: View {
 
     private let existingTemplate: WorkoutTemplate?
 
+    // MARK: - Local data types
+
+    struct SetRow: Identifiable {
+        let id = UUID()
+        var weight: Double = 0
+        var reps: Int = 10
+    }
+
     struct ExerciseEntry: Identifiable {
         let id = UUID()
         let exercise: Exercise
-        var targetSets: Int
-        var targetReps: Int
-        var targetWeight: Double
-        var restSeconds: Int
+        var setRows: [SetRow]
+        var restSeconds: Int = 90
     }
 
     // MARK: - Init
@@ -43,26 +50,30 @@ struct TemplateEditorView: View {
         _name = State(initialValue: template.name)
         _templateDescription = State(initialValue: template.templateDescription)
 
-        let entries = template.exercises
+        let entries: [ExerciseEntry] = template.exercises
             .sorted { $0.order < $1.order }
-            .compactMap { te -> ExerciseEntry? in
+            .compactMap { te in
                 guard let exercise = te.exercise else { return nil }
-                return ExerciseEntry(
-                    exercise: exercise,
-                    targetSets: te.targetSets,
-                    targetReps: te.targetReps,
-                    targetWeight: te.targetWeight,
-                    restSeconds: te.restSeconds
-                )
+                let rows: [SetRow]
+                if te.setTargets.isEmpty {
+                    rows = (0..<max(1, te.targetSets)).map { _ in
+                        SetRow(weight: te.targetWeight, reps: te.targetReps)
+                    }
+                } else {
+                    rows = te.setTargets
+                        .sorted { $0.order < $1.order }
+                        .map { SetRow(weight: $0.targetWeight, reps: $0.targetReps) }
+                }
+                return ExerciseEntry(exercise: exercise, setRows: rows, restSeconds: te.restSeconds)
             }
         _exerciseEntries = State(initialValue: entries)
     }
 
     private var isValid: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty && !exerciseEntries.isEmpty
+        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !exerciseEntries.isEmpty &&
+        exerciseEntries.allSatisfy { !$0.setRows.isEmpty }
     }
-
-    private var isEditing: Bool { existingTemplate != nil }
 
     // MARK: - Body
 
@@ -72,11 +83,8 @@ struct TemplateEditorView: View {
                 // Details
                 Section {
                     TextField("Template Name", text: $name)
-                        .font(.system(size: 16))
                         .foregroundStyle(AppStyle.Colors.text)
-
                     TextField("Description (optional)", text: $templateDescription)
-                        .font(.system(size: 16))
                         .foregroundStyle(AppStyle.Colors.text)
                 } header: {
                     Text("Details").sectionHeader()
@@ -84,25 +92,9 @@ struct TemplateEditorView: View {
                 .listRowBackground(AppStyle.Colors.surface1)
                 .listRowSeparatorTint(AppStyle.Colors.border)
 
-                // Exercises
-                Section {
-                    if exerciseEntries.isEmpty {
-                        Text("No exercises added yet")
-                            .font(.system(size: 15))
-                            .foregroundStyle(AppStyle.Colors.textTertiary)
-                            .listRowBackground(AppStyle.Colors.surface1)
-                    } else {
-                        ForEach($exerciseEntries) { $entry in
-                            exerciseEntryRow(entry: $entry)
-                                .listRowBackground(AppStyle.Colors.surface1)
-                                .listRowSeparatorTint(AppStyle.Colors.border)
-                        }
-                        .onMove { from, to in
-                            exerciseEntries.move(fromOffsets: from, toOffset: to)
-                        }
-                    }
-                } header: {
-                    Text("Exercises").sectionHeader()
+                // One section per exercise
+                ForEach(Array(exerciseEntries.indices), id: \.self) { idx in
+                    exerciseSection(idx: idx)
                 }
 
                 // Add Exercise
@@ -110,21 +102,16 @@ struct TemplateEditorView: View {
                     Button {
                         showExercisePicker = true
                     } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 16))
-                            Text("Add Exercise")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
-                        .foregroundStyle(AppStyle.Colors.brand)
+                        Label("Add Exercise", systemImage: "plus.circle.fill")
+                            .foregroundStyle(AppStyle.Colors.brand)
+                            .font(.system(size: 15, weight: .semibold))
                     }
-                    .listRowBackground(AppStyle.Colors.surface1)
                 }
+                .listRowBackground(AppStyle.Colors.surface1)
             }
             .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
-            .environment(\.editMode, .constant(.active))
-            .navigationTitle(isEditing ? "Edit Template" : "New Template")
+            .navigationTitle(existingTemplate != nil ? "Edit Template" : "New Template")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -139,36 +126,72 @@ struct TemplateEditorView: View {
             }
             .sheet(isPresented: $showExercisePicker) {
                 ExercisePickerView { exercise in
-                    exerciseEntries.append(ExerciseEntry(
-                        exercise: exercise,
-                        targetSets: 3,
-                        targetReps: 10,
-                        targetWeight: 0,
-                        restSeconds: 90
-                    ))
+                    let defaultRows = [SetRow(), SetRow(), SetRow()]
+                    exerciseEntries.append(ExerciseEntry(exercise: exercise, setRows: defaultRows))
                 }
             }
         }
     }
 
-    // MARK: - Exercise Entry Row
+    // MARK: - Exercise Section
 
-    private func exerciseEntryRow(entry: Binding<ExerciseEntry>, index: Int? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
+    @ViewBuilder
+    private func exerciseSection(idx: Int) -> some View {
+        let entry = exerciseEntries[idx]
+
+        Section {
+            // Per-set rows
+            ForEach(Array(entry.setRows.indices), id: \.self) { setIdx in
+                setRowView(exerciseIdx: idx, setIdx: setIdx)
+            }
+
+            // Add Set
+            Button {
+                let last = exerciseEntries[idx].setRows.last
+                exerciseEntries[idx].setRows.append(
+                    SetRow(weight: last?.weight ?? 0, reps: last?.reps ?? 10)
+                )
+            } label: {
+                Label("Add Set", systemImage: "plus.circle.fill")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.brand)
+            }
+
+            // Rest picker
+            HStack(spacing: 6) {
+                Image(systemName: "timer")
+                    .font(.system(size: 13))
+                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                Text("Rest")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                Spacer()
+                Picker("", selection: $exerciseEntries[idx].restSeconds) {
+                    Text("30 sec").tag(30)
+                    Text("1 min").tag(60)
+                    Text("90 sec").tag(90)
+                    Text("2 min").tag(120)
+                    Text("3 min").tag(180)
+                    Text("5 min").tag(300)
+                }
+                .pickerStyle(.menu)
+                .tint(AppStyle.Colors.brand)
+            }
+        } header: {
+            HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.wrappedValue.exercise.name)
-                        .font(.system(size: 15, weight: .semibold))
+                    Text(entry.exercise.name)
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(AppStyle.Colors.text)
-                    Text(entry.wrappedValue.exercise.primaryMusclesDisplayString)
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppStyle.Colors.textTertiary)
+                        .textCase(nil)
+                    Text(entry.exercise.primaryMusclesDisplayString)
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppStyle.Colors.textSecondary)
+                        .textCase(nil)
                 }
                 Spacer()
                 Button {
-                    if let idx = exerciseEntries.firstIndex(where: { $0.id == entry.id }) {
-                        exerciseEntries.remove(at: idx)
-                    }
+                    exerciseEntries.remove(at: idx)
                 } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 14))
@@ -176,74 +199,76 @@ struct TemplateEditorView: View {
                 }
                 .buttonStyle(.plain)
             }
-
-            HStack(spacing: 12) {
-                stepperControl(label: "Sets", value: entry.targetSets, range: 1...10)
-                stepperControl(label: "Reps", value: entry.targetReps, range: 1...30)
-            }
-
-            HStack(spacing: 8) {
-                Text("Weight")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.textSecondary)
-
-                TextField("0", value: entry.targetWeight, format: .number)
-                    .keyboardType(.decimalPad)
-                    .font(AppStyle.Typography.mono(14, weight: .bold))
-                    .foregroundStyle(AppStyle.Colors.text)
-                    .multilineTextAlignment(.center)
-                    .frame(width: 60, height: 32)
-                    .background(AppStyle.Colors.surface2)
-                    .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.small))
-
-                Text("kg")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.textTertiary)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(AppStyle.Colors.surface2)
-            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.small))
+            .padding(.bottom, 4)
         }
-        .padding(.vertical, 4)
+        .listRowBackground(AppStyle.Colors.surface1)
+        .listRowSeparatorTint(AppStyle.Colors.border)
     }
 
-    private func stepperControl(label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        HStack(spacing: 8) {
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(AppStyle.Colors.textSecondary)
+    // MARK: - Set Row
+
+    private func setRowView(exerciseIdx: Int, setIdx: Int) -> some View {
+        HStack(spacing: 0) {
+            Text("Set \(setIdx + 1)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AppStyle.Colors.brand)
+                .frame(width: 52, alignment: .leading)
+
+            Spacer()
+
+            // Weight
+            TextField("0", value: $exerciseEntries[exerciseIdx].setRows[setIdx].weight, format: .number)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .frame(width: 60)
+                .font(AppStyle.Typography.mono(15, weight: .semibold))
+                .foregroundStyle(AppStyle.Colors.text)
+                .padding(.vertical, 5)
+                .background(AppStyle.Colors.surface2)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+
+            Text("kg")
+                .font(.system(size: 12))
+                .foregroundStyle(AppStyle.Colors.textTertiary)
+                .padding(.horizontal, 5)
+
+            Text("×")
+                .font(.system(size: 13))
+                .foregroundStyle(AppStyle.Colors.textTertiary)
+                .padding(.horizontal, 5)
+
+            // Reps
+            TextField("10", value: $exerciseEntries[exerciseIdx].setRows[setIdx].reps, format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .frame(width: 44)
+                .font(AppStyle.Typography.mono(15, weight: .semibold))
+                .foregroundStyle(AppStyle.Colors.text)
+                .padding(.vertical, 5)
+                .background(AppStyle.Colors.surface2)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+
+            Text("reps")
+                .font(.system(size: 12))
+                .foregroundStyle(AppStyle.Colors.textTertiary)
+                .padding(.leading, 5)
+
+            Spacer()
 
             Button {
-                if value.wrappedValue > range.lowerBound { value.wrappedValue -= 1 }
+                guard exerciseEntries[exerciseIdx].setRows.count > 1 else { return }
+                exerciseEntries[exerciseIdx].setRows.remove(at: setIdx)
             } label: {
                 Image(systemName: "minus.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                    .font(.system(size: 18))
+                    .foregroundStyle(exerciseEntries[exerciseIdx].setRows.count > 1
+                        ? AppStyle.Colors.error
+                        : AppStyle.Colors.textTertiary)
             }
             .buttonStyle(.plain)
-            .disabled(value.wrappedValue <= range.lowerBound)
-
-            Text("\(value.wrappedValue)")
-                .font(AppStyle.Typography.mono(16, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .frame(minWidth: 24)
-                .contentTransition(.numericText())
-
-            Button {
-                if value.wrappedValue < range.upperBound { value.wrappedValue += 1 }
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(AppStyle.Colors.brand)
-            }
-            .buttonStyle(.plain)
-            .disabled(value.wrappedValue >= range.upperBound)
+            .disabled(exerciseEntries[exerciseIdx].setRows.count <= 1)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(AppStyle.Colors.surface2)
-        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.small))
+        .padding(.vertical, 2)
     }
 
     // MARK: - Save
@@ -263,45 +288,39 @@ struct TemplateEditorView: View {
             description: templateDescription.trimmingCharacters(in: .whitespaces)
         )
         modelContext.insert(template)
-
-        for (index, entry) in exerciseEntries.enumerated() {
-            let te = TemplateExercise(
-                order: index,
-                targetSets: entry.targetSets,
-                targetReps: entry.targetReps,
-                restSeconds: entry.restSeconds
-            )
-            te.targetWeight = entry.targetWeight
-            te.exercise = entry.exercise
-            te.template = template
-            modelContext.insert(te)
-        }
+        insertExercises(for: template)
     }
 
     private func updateExisting(_ template: WorkoutTemplate) {
         template.name = name.trimmingCharacters(in: .whitespaces)
         template.templateDescription = templateDescription.trimmingCharacters(in: .whitespaces)
+        for te in template.exercises { modelContext.delete(te) }
+        insertExercises(for: template)
+    }
 
-        for te in template.exercises {
-            modelContext.delete(te)
-        }
-
-        for (index, entry) in exerciseEntries.enumerated() {
+    private func insertExercises(for template: WorkoutTemplate) {
+        for (idx, entry) in exerciseEntries.enumerated() {
             let te = TemplateExercise(
-                order: index,
-                targetSets: entry.targetSets,
-                targetReps: entry.targetReps,
+                order: idx,
+                targetSets: entry.setRows.count,
+                targetReps: entry.setRows.first?.reps ?? 10,
                 restSeconds: entry.restSeconds
             )
-            te.targetWeight = entry.targetWeight
+            te.targetWeight = entry.setRows.first?.weight ?? 0
             te.exercise = entry.exercise
             te.template = template
             modelContext.insert(te)
+
+            for (setIdx, row) in entry.setRows.enumerated() {
+                let ts = TemplateSet(order: setIdx, targetWeight: row.weight, targetReps: row.reps)
+                ts.templateExercise = te
+                modelContext.insert(ts)
+            }
         }
     }
 }
 
 #Preview("Create") {
     TemplateEditorView()
-        .modelContainer(for: [WorkoutTemplate.self, Exercise.self], inMemory: true)
+        .modelContainer(for: [WorkoutTemplate.self, Exercise.self, TemplateSet.self], inMemory: true)
 }

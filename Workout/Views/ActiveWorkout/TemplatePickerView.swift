@@ -15,6 +15,7 @@ struct TemplatePickerView: View {
     @State private var showCreateTemplate = false
     @State private var templateToEdit: WorkoutTemplate?
     @State private var templateToDelete: WorkoutTemplate?
+    @State private var showDeleteAlert = false
 
     var body: some View {
         List {
@@ -66,9 +67,11 @@ struct TemplatePickerView: View {
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
                             templateToDelete = template
+                            showDeleteAlert = true
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
+                        .tint(.red)
                         Button {
                             templateToEdit = template
                         } label: {
@@ -98,15 +101,8 @@ struct TemplatePickerView: View {
         .sheet(item: $templateToEdit) { template in
             TemplateEditorView(template: template)
         }
-        .confirmationDialog(
-            "Delete \"\(templateToDelete?.name ?? "")\"?",
-            isPresented: Binding(
-                get: { templateToDelete != nil },
-                set: { if !$0 { templateToDelete = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            Button("Delete Template", role: .destructive) {
+        .alert("Delete \"\(templateToDelete?.name ?? "")\"?", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
                 if let t = templateToDelete {
                     modelContext.delete(t)
                     templateToDelete = nil
@@ -228,10 +224,6 @@ struct TemplatePickerView: View {
             }
 
             Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

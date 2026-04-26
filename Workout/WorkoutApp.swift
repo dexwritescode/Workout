@@ -13,6 +13,7 @@ struct WorkoutApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Exercise.self,
+            TemplateSet.self,
             TemplateExercise.self,
             WorkoutTemplate.self,
             WorkoutSession.self,

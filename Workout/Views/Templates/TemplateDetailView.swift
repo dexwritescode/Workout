@@ -16,8 +16,9 @@ struct TemplateDetailView: View {
     let template: WorkoutTemplate
 
     @State private var showEdit = false
-    @State private var showDeleteConfirmation = false
+    @State private var showDeleteAlert = false
     @State private var showActiveWorkout = false
+    @State private var exerciseToEdit: TemplateExercise?
 
     private var sortedExercises: [TemplateExercise] {
         template.exercises.sorted { $0.order < $1.order }
@@ -47,7 +48,10 @@ struct TemplateDetailView: View {
                     } else {
                         VStack(spacing: 6) {
                             ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, te in
-                                exerciseRow(te, index: index)
+                                Button { exerciseToEdit = te } label: {
+                                    exerciseRow(te, index: index)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -89,7 +93,7 @@ struct TemplateDetailView: View {
                     }
                     Divider()
                     Button(role: .destructive) {
-                        showDeleteConfirmation = true
+                        showDeleteAlert = true
                     } label: {
                         Label("Delete Template", systemImage: "trash")
                     }
@@ -101,12 +105,11 @@ struct TemplateDetailView: View {
         .sheet(isPresented: $showEdit) {
             TemplateEditorView(template: template)
         }
-        .confirmationDialog(
-            "Delete \"\(template.name)\"?",
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete Template", role: .destructive) {
+        .sheet(item: $exerciseToEdit) { te in
+            TemplateExerciseEditorView(templateExercise: te)
+        }
+        .alert("Delete \"\(template.name)\"?", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
                 modelContext.delete(template)
                 dismiss()
             }
@@ -184,6 +187,10 @@ struct TemplateDetailView: View {
                     .background(AppStyle.Colors.textSecondary.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppStyle.Colors.textTertiary)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

@@ -14,63 +14,76 @@ struct TemplatePickerView: View {
 
     @State private var showCreateTemplate = false
     @State private var templateToEdit: WorkoutTemplate?
+    @State private var templateToDelete: WorkoutTemplate?
+    @State private var showDeleteAlert = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(dayOfWeek)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(AppStyle.Colors.textTertiary)
-                        .textCase(.uppercase)
-                        .tracking(0.6)
+        List {
+            // Header
+            VStack(alignment: .leading, spacing: 4) {
+                Text(dayOfWeek)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+                    .textCase(.uppercase)
+                    .tracking(0.6)
+                Text("Workouts")
+                    .font(.system(size: 26, weight: .heavy))
+                    .foregroundStyle(AppStyle.Colors.text)
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
 
-                    Text("Workouts")
-                        .font(.system(size: 26, weight: .heavy))
-                        .foregroundStyle(AppStyle.Colors.text)
-                }
-                .padding(.bottom, 24)
+            // Smart Workout card
+            NavigationLink(destination: SmartWorkoutView()) {
+                smartWorkoutCard
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 20, trailing: 16))
 
-                // Smart Workout Card
-                NavigationLink(destination: SmartWorkoutView()) {
-                    smartWorkoutCard
-                }
-                .buttonStyle(.plain)
-                .padding(.bottom, 24)
+            // Templates
+            if templates.isEmpty {
+                emptyState
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+            } else {
+                Text("My Templates")
+                    .sectionHeader()
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 10, trailing: 16))
 
-                // My Templates
-                if !templates.isEmpty {
-                    Text("My Templates")
-                        .sectionHeader()
-                        .padding(.bottom, 14)
-
-                    VStack(spacing: 8) {
-                        ForEach(templates) { template in
-                            NavigationLink(destination: ActiveWorkoutView(template: template, modelContext: modelContext)) {
-                                templateRow(template)
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button {
-                                    templateToEdit = template
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                Button(role: .destructive) {
-                                    modelContext.delete(template)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
+                ForEach(templates) { template in
+                    NavigationLink(destination: TemplateDetailView(template: template)) {
+                        templateRow(template)
                     }
-                } else {
-                    emptyState
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            templateToDelete = template
+                            showDeleteAlert = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .tint(.red)
+                        Button {
+                            templateToEdit = template
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(AppStyle.Colors.brand)
+                    }
                 }
             }
-            .padding(.horizontal, 16)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .background(AppStyle.Colors.background)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -87,6 +100,17 @@ struct TemplatePickerView: View {
         }
         .sheet(item: $templateToEdit) { template in
             TemplateEditorView(template: template)
+        }
+        .alert("Delete \"\(templateToDelete?.name ?? "")\"?", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                if let t = templateToDelete {
+                    modelContext.delete(t)
+                    templateToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { templateToDelete = nil }
+        } message: {
+            Text("This cannot be undone.")
         }
     }
 
@@ -179,12 +203,19 @@ struct TemplatePickerView: View {
                 }
 
                 HStack(spacing: 10) {
+                    let totalSets = template.exercises.reduce(0) { $0 + $1.targetSets }
+                    let duration = max(20, totalSets * 2 + template.exercises.count * 2)
+
                     Label("\(template.exercises.count) exercises", systemImage: "square.grid.2x2")
                         .font(.system(size: 11))
                         .foregroundStyle(AppStyle.Colors.textTertiary)
 
+                    Label("~\(duration) min", systemImage: "clock")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppStyle.Colors.textTertiary)
+
                     if let lastUsed = template.lastUsedDate {
-                        Label(lastUsed.formatted(.relative(presentation: .named)), systemImage: "clock")
+                        Label(lastUsed.formatted(.relative(presentation: .named)), systemImage: "calendar")
                             .font(.system(size: 11))
                             .foregroundStyle(AppStyle.Colors.textTertiary)
                     }
@@ -193,10 +224,6 @@ struct TemplatePickerView: View {
             }
 
             Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -218,9 +245,10 @@ struct TemplatePickerView: View {
             Text("No Templates Yet")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(AppStyle.Colors.text)
-            Text("Create a workout template to get started")
+            Text("Tap + to create your first workout template")
                 .font(.system(size: 14))
                 .foregroundStyle(AppStyle.Colors.textSecondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)

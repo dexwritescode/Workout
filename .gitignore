@@ -1,5 +1,6 @@
-# Claude Code memory — local AI context, not project source
+# Claude Code — local AI context, not project source
 Memory/
+CLAUDE.md
 
 # Local signing config — contains developer team ID, never commit
 Config/Signing.xcconfig

@@ -30,6 +30,9 @@ jobs:
           key: deriveddata-${{ runner.os }}-${{ hashFiles('**/*.swift', 'Workout.xcodeproj/project.pbxproj') }}
           restore-keys: deriveddata-${{ runner.os }}-
 
+      - name: Create signing config
+        run: cp Config/Signing.xcconfig.example Config/Signing.xcconfig
+
       - name: Build
         run: |
           xcodebuild \

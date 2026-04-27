@@ -22,6 +22,8 @@ struct ExerciseTrackingView: View {
     @State private var extraSets: Int = 0
     @State private var lastSession: (date: Date, sets: [(weight: Double, reps: Int)])? = nil
     @State private var showPlateCalculator = false
+    @State private var editingOriginalWeight: Double = 0
+    @State private var editingOriginalReps: Int = 0
 
     private static let restTimerKey = "activeRestTimerEndDate"
 
@@ -445,6 +447,8 @@ struct ExerciseTrackingView: View {
 
     private func beginEditing(_ set: ExerciseSet) {
         editingSet = set
+        editingOriginalWeight = set.weight
+        editingOriginalReps = set.reps
         weight = set.weight
         reps = Double(set.reps)
     }

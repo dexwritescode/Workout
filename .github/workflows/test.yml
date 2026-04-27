@@ -18,24 +18,26 @@ concurrency:
 
 jobs:
   test:
+    name: Test · ${{ matrix.device }}
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - "iPhone 17 Pro Max"
+          - "iPhone 17 Pro"
+          - "iPhone 17"
+          - "iPhone SE (4th generation)"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache DerivedData
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData
-          key: deriveddata-${{ runner.os }}-${{ hashFiles('**/*.swift', 'Workout.xcodeproj/project.pbxproj') }}
-          restore-keys: deriveddata-${{ runner.os }}-
-
       - name: Create signing config
         run: cp Config/Signing.xcconfig.example Config/Signing.xcconfig
 
-      - name: Test
+      - name: Test on ${{ matrix.device }}
         run: |
           xcodebuild test \
             -scheme Workout \
-            -destination "platform=iOS Simulator,name=iPhone 17 Pro Max" \
+            -destination "platform=iOS Simulator,name=${{ matrix.device }}" \
             CODE_SIGNING_ALLOWED=NO

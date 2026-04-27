@@ -23,17 +23,21 @@ struct TemplateEditorView: View {
 
     // MARK: - Local data types
 
-    struct SetRow: Identifiable {
+    struct SetRow: Identifiable, Equatable {
         let id = UUID()
         var weight: Double = 0
         var reps: Int = 10
     }
 
-    struct ExerciseEntry: Identifiable {
+    struct ExerciseEntry: Identifiable, Equatable {
         let id = UUID()
         let exercise: Exercise
         var setRows: [SetRow]
         var restSeconds: Int = 90
+
+        static func == (lhs: ExerciseEntry, rhs: ExerciseEntry) -> Bool {
+            lhs.id == rhs.id && lhs.setRows == rhs.setRows && lhs.restSeconds == rhs.restSeconds
+        }
     }
 
     // MARK: - Init
@@ -128,6 +132,25 @@ struct TemplateEditorView: View {
                 ExercisePickerView { exercise in
                     let defaultRows = [SetRow(), SetRow(), SetRow()]
                     exerciseEntries.append(ExerciseEntry(exercise: exercise, setRows: defaultRows))
+                }
+            }
+            .onChange(of: exerciseEntries) { oldEntries, newEntries in
+                for i in oldEntries.indices where i < newEntries.count {
+                    guard oldEntries[i].setRows != newEntries[i].setRows else { continue }
+                    let oldRows = oldEntries[i].setRows; let newRows = newEntries[i].setRows
+                    for j in oldRows.indices where j < newRows.count {
+                        let old = oldRows[j]; let new = newRows[j]
+                        if abs(new.weight - old.weight) > 0.001 {
+                            for k in (j + 1)..<exerciseEntries[i].setRows.count {
+                                if abs(exerciseEntries[i].setRows[k].weight - old.weight) < 0.001 { exerciseEntries[i].setRows[k].weight = new.weight } else { break }
+                            }
+                        }
+                        if new.reps != old.reps {
+                            for k in (j + 1)..<exerciseEntries[i].setRows.count {
+                                if exerciseEntries[i].setRows[k].reps == old.reps { exerciseEntries[i].setRows[k].reps = new.reps } else { break }
+                            }
+                        }
+                    }
                 }
             }
         }

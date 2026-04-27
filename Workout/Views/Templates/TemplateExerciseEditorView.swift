@@ -15,7 +15,7 @@ struct TemplateExerciseEditorView: View {
 
     let templateExercise: TemplateExercise
 
-    struct SetRow: Identifiable {
+    struct SetRow: Identifiable, Equatable {
         let id = UUID()
         var weight: Double
         var reps: Int
@@ -62,6 +62,22 @@ struct TemplateExerciseEditorView: View {
             .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: setRows) { oldRows, newRows in
+                // Find which index changed and cascade independently per field
+                for i in oldRows.indices where i < newRows.count {
+                    let old = oldRows[i]; let new = newRows[i]
+                    if abs(new.weight - old.weight) > 0.001 {
+                        for j in (i + 1)..<setRows.count {
+                            if abs(setRows[j].weight - old.weight) < 0.001 { setRows[j].weight = new.weight } else { break }
+                        }
+                    }
+                    if new.reps != old.reps {
+                        for j in (i + 1)..<setRows.count {
+                            if setRows[j].reps == old.reps { setRows[j].reps = new.reps } else { break }
+                        }
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

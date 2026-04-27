@@ -20,7 +20,16 @@ final class UserSettings {
     var preferredEquipment: [String]
     var preferredSplitType: String?     // SplitType raw value
     var createdDate: Date
-    
+
+    // Plate calculator
+    var availablePlatesKg: [Double]
+    var availablePlatesLbs: [Double]
+    var barbellWeightKg: Double
+    var barbellWeightLbs: Double
+
+    static let standardPlatesKg:  [Double] = [25, 20, 15, 10, 5, 2.5, 1.25, 0.5, 0.25]
+    static let standardPlatesLbs: [Double] = [45, 35, 25, 10, 5, 2.5, 1.25]
+
     init(id: UUID = UUID()) {
         self.id = id
         self.weightUnit = WeightUnit.kg.rawValue
@@ -28,6 +37,10 @@ final class UserSettings {
         self.notificationsEnabled = false
         self.preferredEquipment = []
         self.createdDate = Date()
+        self.availablePlatesKg  = [25, 20, 15, 10, 5, 2.5, 1.25]
+        self.availablePlatesLbs = [45, 35, 25, 10, 5, 2.5, 1.25]
+        self.barbellWeightKg  = 20
+        self.barbellWeightLbs = 45
     }
     
     // MARK: - Type-safe computed properties

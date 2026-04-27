@@ -10,6 +10,7 @@ import SwiftUI
 struct ExerciseDetailView: View {
     let exercise: Exercise
     @State private var showContent = false
+    @State private var showHistory = false
 
     var body: some View {
         ScrollView {
@@ -32,6 +33,15 @@ struct ExerciseDetailView: View {
         .background(AppStyle.Colors.background)
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    ExerciseHistoryView(exercise: exercise)
+                } label: {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                }
+            }
+        }
         .onAppear {
             withAnimation(.easeInOut(duration: 0.3)) {
                 showContent = true

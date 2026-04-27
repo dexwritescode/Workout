@@ -91,6 +91,19 @@ struct SettingsView: View {
                     }
                 }
 
+                // Equipment
+                settingsSection("Equipment") {
+                    NavigationLink {
+                        PlateSetupView(settings: settings)
+                    } label: {
+                        settingRowWithChevron(
+                            label: "Plate Setup",
+                            value: "\(settings.unit == .kg ? settings.availablePlatesKg.count : settings.availablePlatesLbs.count) plates"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 // Workout Defaults
                 settingsSection("Workout Defaults") {
                     VStack(alignment: .leading, spacing: 2) {

@@ -135,6 +135,7 @@ struct ExerciseTrackingView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer(minLength: 0)
+                overloadBadge(lastWeight: info.sets.first?.weight)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
@@ -145,7 +146,40 @@ struct ExerciseTrackingView: View {
                     .stroke(AppStyle.Colors.border, lineWidth: 1)
             )
             .transition(.opacity.combined(with: .move(edge: .top)))
+            .animation(.easeInOut(duration: 0.2), value: weight)
         }
+    }
+
+    @ViewBuilder
+    private func overloadBadge(lastWeight: Double?) -> some View {
+        if let lastWeight, lastWeight > 0, weight > 0, editingSet == nil {
+            let delta = weight - lastWeight
+            let isUp = delta > 0.001
+            let isDown = delta < -0.001
+            let label = isUp
+                ? "+\(formatWeight(abs(delta)))"
+                : isDown ? "−\(formatWeight(abs(delta)))" : "="
+            let color: Color = isUp ? AppStyle.Colors.success : isDown ? AppStyle.Colors.error : AppStyle.Colors.textTertiary
+            let icon = isUp ? "arrow.up" : isDown ? "arrow.down" : "equal"
+
+            HStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 9, weight: .bold))
+                Text(label)
+                    .font(.system(size: 11, weight: .bold))
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    private func formatWeight(_ value: Double) -> String {
+        value.truncatingRemainder(dividingBy: 1) == 0
+            ? String(format: "%.0f", value)
+            : String(format: "%.1f", value)
     }
 
     // MARK: - Rest Timer

@@ -20,6 +20,7 @@ struct ExerciseTrackingView: View {
     @State private var restTimerEndDate: Date?
     @State private var editingSet: ExerciseSet?
     @State private var extraSets: Int = 0
+    @State private var lastSession: (date: Date, sets: [(weight: Double, reps: Int)])? = nil
 
     private static let restTimerKey = "activeRestTimerEndDate"
 
@@ -79,6 +80,9 @@ struct ExerciseTrackingView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
+                    // Last session banner
+                    lastSessionBanner
+
                     // Interactive sets table
                     setsTable
 
@@ -102,6 +106,45 @@ struct ExerciseTrackingView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             restoreState()
+        }
+    }
+
+    // MARK: - Last Session Banner
+
+    @ViewBuilder
+    private var lastSessionBanner: some View {
+        if let info = lastSession {
+            HStack(spacing: 8) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 12))
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+                Text(info.date.formatted(.relative(presentation: .named)))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                Text("·")
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+                    .font(.system(size: 12))
+                Text(info.sets.map { s in
+                    let w = s.weight.truncatingRemainder(dividingBy: 1) == 0
+                        ? String(format: "%.0f", s.weight)
+                        : String(format: "%.1f", s.weight)
+                    return "\(w)×\(s.reps)"
+                }.joined(separator: "  "))
+                    .font(AppStyle.Typography.mono(12, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(AppStyle.Colors.surface1)
+            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
+                    .stroke(AppStyle.Colors.border, lineWidth: 1)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }
 
@@ -417,7 +460,34 @@ struct ExerciseTrackingView: View {
 
     // MARK: - State Restoration
 
+    private func loadLastSession() {
+        guard let exercise = completedExercise.exercise else { return }
+        let exerciseID = exercise.id
+        let currentSessionID = completedExercise.session?.id
+
+        do {
+            let all = try modelContext.fetch(FetchDescriptor<CompletedExercise>())
+            let previous = all
+                .filter { ce in
+                    ce.exercise?.id == exerciseID &&
+                    ce.session?.isCompleted == true &&
+                    (currentSessionID == nil || ce.session?.id != currentSessionID)
+                }
+                .sorted { ($0.session?.startTime ?? .distantPast) > ($1.session?.startTime ?? .distantPast) }
+
+            guard let last = previous.first, let date = last.session?.startTime else { return }
+            let sets = last.sets
+                .filter(\.isCompleted)
+                .sorted { $0.setNumber < $1.setNumber }
+                .map { (weight: $0.weight, reps: $0.reps) }
+            guard !sets.isEmpty else { return }
+            lastSession = (date: date, sets: sets)
+        } catch {}
+    }
+
     private func restoreState() {
+        loadLastSession()
+
         // Restore rest timer from UserDefaults
         let savedEnd = UserDefaults.standard.double(forKey: Self.restTimerKey)
         if savedEnd > 0 {
@@ -430,10 +500,13 @@ struct ExerciseTrackingView: View {
             }
         }
 
-        // Pre-fill weight/reps: last completed set > template target weight > default
+        // Pre-fill: current session's last set > last session's first set > template target
         if let lastSet = completedSets.last {
             weight = lastSet.weight
             reps = Double(lastSet.reps)
+        } else if let firstSet = lastSession?.sets.first {
+            weight = firstSet.weight
+            reps = Double(firstSet.reps)
         } else if templateExercise.targetWeight > 0 {
             weight = templateExercise.targetWeight
             reps = Double(templateExercise.targetReps)

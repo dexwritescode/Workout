@@ -14,6 +14,8 @@ struct ActiveWorkoutView: View {
     @State private var viewModel: ActiveWorkoutViewModel
     @State private var showCancelConfirmation = false
     @State private var showSummary = false
+    @State private var showExercisePicker = false
+    @State private var selectedTrackingIndex: Int?
 
     let autoStart: Bool
 
@@ -51,6 +53,13 @@ struct ActiveWorkoutView: View {
                     }
                     .foregroundStyle(AppStyle.Colors.error)
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showExercisePicker = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
             }
         }
         .confirmationDialog(
@@ -65,6 +74,24 @@ struct ActiveWorkoutView: View {
             Button("Keep Going", role: .cancel) {}
         } message: {
             Text("Your progress will be lost.")
+        }
+        .navigationDestination(item: $selectedTrackingIndex) { index in
+            let exercises = viewModel.allTemplateExercises
+            let completed = viewModel.sortedCompletedExercises
+            if index < exercises.count, index < completed.count {
+                ExerciseTrackingView(
+                    completedExercise: completed[index],
+                    templateExercise: exercises[index],
+                    modelContext: modelContext,
+                    onAllSetsComplete: { viewModel.markExerciseComplete(at: index) }
+                )
+            }
+        }
+        .sheet(isPresented: $showExercisePicker) {
+            ExercisePickerView { exercise in
+                viewModel.addExercise(exercise)
+                showExercisePicker = false
+            }
         }
         .fullScreenCover(isPresented: $showSummary) {
             if let summary = viewModel.summary {
@@ -163,25 +190,20 @@ struct ActiveWorkoutView: View {
     private func exerciseList(highlight: Bool) -> some View {
         ScrollView {
             VStack(spacing: 6) {
-                ForEach(Array(viewModel.sortedExercises.enumerated()), id: \.element.id) { index, templateExercise in
+                ForEach(Array(viewModel.allTemplateExercises.enumerated()), id: \.element.id) { index, templateExercise in
                     let completedExercise = viewModel.sortedCompletedExercises.count > index
                         ? viewModel.sortedCompletedExercises[index]
                         : nil
 
-                    if highlight, let completedExercise {
-                        NavigationLink {
-                            ExerciseTrackingView(
-                                completedExercise: completedExercise,
-                                templateExercise: templateExercise,
-                                modelContext: modelContext,
-                                onAllSetsComplete: {
-                                    viewModel.markExerciseComplete(at: index)
-                                }
-                            )
-                        } label: {
-                            exerciseRowContent(templateExercise: templateExercise, index: index, highlight: highlight)
+                    if highlight {
+                        SwipeToRevealDelete(onDelete: { viewModel.removeExercise(at: index) }) {
+                            Button {
+                                selectedTrackingIndex = index
+                            } label: {
+                                exerciseRowContent(templateExercise: templateExercise, index: index, highlight: highlight)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     } else if !highlight, let exercise = templateExercise.exercise {
                         NavigationLink {
                             ExerciseDetailView(exercise: exercise)

@@ -23,20 +23,29 @@ final class ActiveWorkoutViewModel {
     private(set) var state: WorkoutState = .notStarted
     private(set) var session: WorkoutSession?
     private(set) var currentExerciseIndex: Int = 0
-    
+    private(set) var sessionExercises: [TemplateExercise] = []
+    private(set) var adhocExercises: [TemplateExercise] = []
+
     let template: WorkoutTemplate
     private let modelContext: ModelContext
-    
-    /// Sorted template exercises for display
+
+    /// Sorted template exercises (source of truth from template, read-only)
     var sortedExercises: [TemplateExercise] {
         template.exercises.sorted { $0.order < $1.order }
     }
-    
+
+    /// All exercises for the active session — session-local copy of template exercises
+    /// plus any exercises added mid-workout. Does not mutate the template.
+    var allTemplateExercises: [TemplateExercise] {
+        sessionExercises + adhocExercises
+    }
+
     // MARK: - Init
-    
+
     init(template: WorkoutTemplate, modelContext: ModelContext) {
         self.template = template
         self.modelContext = modelContext
+        self.sessionExercises = template.exercises.sorted { $0.order < $1.order }
     }
     
     // MARK: - Session Lifecycle
@@ -45,19 +54,18 @@ final class ActiveWorkoutViewModel {
     func startWorkout() {
         let newSession = WorkoutSession(template: template)
         modelContext.insert(newSession)
-        
-        // Pre-create CompletedExercise for each template exercise
-        for templateExercise in sortedExercises {
+
+        sessionExercises = sortedExercises
+
+        for templateExercise in sessionExercises {
             let completed = CompletedExercise(order: templateExercise.order)
             completed.exercise = templateExercise.exercise
             completed.session = newSession
             modelContext.insert(completed)
             newSession.completedExercises.append(completed)
         }
-        
-        // Update template's last used date
+
         template.lastUsedDate = Date()
-        
         session = newSession
         currentExerciseIndex = 0
         state = .inProgress
@@ -71,8 +79,53 @@ final class ActiveWorkoutViewModel {
         state = .finished
     }
     
+    /// Adds an exercise to the current session without modifying the template
+    func addExercise(_ exercise: Exercise) {
+        guard let session else { return }
+        let order = allTemplateExercises.count
+        let te = TemplateExercise(order: order, targetSets: 3, targetReps: 10, restSeconds: 90)
+        te.exercise = exercise
+        modelContext.insert(te)
+        adhocExercises.append(te)
+
+        let ce = CompletedExercise(order: order)
+        ce.exercise = exercise
+        ce.session = session
+        modelContext.insert(ce)
+        session.completedExercises.append(ce)
+    }
+
+    /// Removes an exercise from the current session by its position in allTemplateExercises.
+    /// Template exercises are removed from the session list only — the template is not modified.
+    func removeExercise(at index: Int) {
+        guard let session else { return }
+        let sorted = sortedCompletedExercises
+        guard index < sorted.count else { return }
+
+        let ce = sorted[index]
+        session.completedExercises.removeAll { $0 === ce }
+        modelContext.delete(ce)
+
+        if index < sessionExercises.count {
+            sessionExercises.remove(at: index)
+        } else {
+            let adhocIndex = index - sessionExercises.count
+            if adhocIndex < adhocExercises.count {
+                modelContext.delete(adhocExercises.remove(at: adhocIndex))
+            }
+        }
+
+        for (i, c) in sortedCompletedExercises.enumerated() { c.order = i }
+
+        let remaining = allTemplateExercises.count
+        if currentExerciseIndex >= remaining { currentExerciseIndex = max(0, remaining - 1) }
+    }
+
     /// Cancels and deletes the current workout session
     func cancelWorkout() {
+        for te in adhocExercises { modelContext.delete(te) }
+        adhocExercises = []
+        sessionExercises = []
         guard let session else { return }
         modelContext.delete(session)
         self.session = nil
@@ -106,10 +159,11 @@ final class ActiveWorkoutViewModel {
     
     /// Marks an exercise as complete and auto-advances to the next incomplete exercise
     func markExerciseComplete(at index: Int) {
-        let maxIndex = sortedExercises.count - 1
+        let all = allTemplateExercises
+        let maxIndex = all.count - 1
         guard index + 1 <= maxIndex else { return }
         for i in (index + 1)...maxIndex {
-            let te = sortedExercises[i]
+            let te = all[i]
             let ce = sortedCompletedExercises.count > i ? sortedCompletedExercises[i] : nil
             let done = ce?.sets.filter(\.isCompleted).count ?? 0
             if done < te.targetSets {
@@ -185,6 +239,9 @@ final class ActiveWorkoutViewModel {
     
     /// Discards the workout by deleting the session
     func discardWorkout() {
+        for te in adhocExercises { modelContext.delete(te) }
+        adhocExercises = []
+        sessionExercises = []
         guard let session else { return }
         modelContext.delete(session)
         self.session = nil

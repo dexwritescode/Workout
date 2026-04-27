@@ -27,7 +27,7 @@ jobs:
           - "iPhone 17 Pro Max"
           - "iPhone 17 Pro"
           - "iPhone 17"
-          - "iPhone SE (4th generation)"
+          - "iPhone 16e"
 
     steps:
       - uses: actions/checkout@v4

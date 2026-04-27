@@ -196,7 +196,11 @@ struct ActiveWorkoutView: View {
                         : nil
 
                     if highlight {
-                        SwipeToRevealDelete(onDelete: { viewModel.removeExercise(at: index) }) {
+                        SwipeToRevealDelete(onDelete: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                viewModel.removeExercise(at: index)
+                            }
+                        }) {
                             Button {
                                 selectedTrackingIndex = index
                             } label: {
@@ -204,6 +208,10 @@ struct ActiveWorkoutView: View {
                             }
                             .buttonStyle(.plain)
                         }
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)),
+                            removal: .opacity.combined(with: .move(edge: .trailing))
+                        ))
                     } else if !highlight, let exercise = templateExercise.exercise {
                         NavigationLink {
                             ExerciseDetailView(exercise: exercise)

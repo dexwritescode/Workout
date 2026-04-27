@@ -116,7 +116,7 @@ struct ExerciseTrackingView: View {
             }
         }
         .sheet(isPresented: $showPlateCalculator) {
-            PlateCalculatorView(targetWeight: weight, barbellWeight: 20)
+            PlateCalculatorView(targetWeight: weight)
         }
         .onAppear {
             restoreState()

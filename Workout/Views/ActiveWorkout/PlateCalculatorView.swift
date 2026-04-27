@@ -7,14 +7,23 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PlateCalculatorView: View {
     let targetWeight: Double
-    let barbellWeight: Double
 
     @Environment(\.dismiss) private var dismiss
+    @Query private var allSettings: [UserSettings]
 
-    private let availablePlates: [Double] = [25, 20, 15, 10, 5, 2.5, 1.25]
+    private var settings: UserSettings? { allSettings.first }
+    private var isKg: Bool { settings?.unit == .kg }
+    private var barbellWeight: Double { isKg ? (settings?.barbellWeightKg ?? 20) : (settings?.barbellWeightLbs ?? 45) }
+    private var availablePlates: [Double] {
+        let plates = isKg ? (settings?.availablePlatesKg ?? UserSettings.standardPlatesKg)
+                          : (settings?.availablePlatesLbs ?? UserSettings.standardPlatesLbs)
+        return plates.sorted(by: >)
+    }
+    private var unitLabel: String { isKg ? "kg" : "lbs" }
 
     private var platesPerSide: [(plate: Double, count: Int)] {
         let perSide = max(0, targetWeight - barbellWeight) / 2
@@ -81,7 +90,7 @@ struct PlateCalculatorView: View {
     private var targetHeader: some View {
         HStack(spacing: 0) {
             VStack(spacing: 2) {
-                Text(formatWeight(targetWeight))
+                Text("\(formatWeight(targetWeight)) \(unitLabel)")
                     .font(.system(size: 32, weight: .heavy))
                     .foregroundStyle(AppStyle.Colors.text)
                 Text("target")
@@ -95,7 +104,7 @@ struct PlateCalculatorView: View {
                 .foregroundStyle(AppStyle.Colors.textTertiary)
 
             VStack(spacing: 2) {
-                Text(formatWeight(loadedWeight))
+                Text("\(formatWeight(loadedWeight)) \(unitLabel)")
                     .font(.system(size: 32, weight: .heavy))
                     .foregroundStyle(abs(loadedWeight - targetWeight) < 0.01
                         ? AppStyle.Colors.brand
@@ -179,7 +188,7 @@ struct PlateCalculatorView: View {
                 Text("Per side")
                     .sectionHeader()
                 Spacer()
-                Text("Bar: \(formatWeight(barbellWeight)) kg")
+                Text("Bar: \(formatWeight(barbellWeight)) \(unitLabel)")
                     .font(.system(size: 12))
                     .foregroundStyle(AppStyle.Colors.textTertiary)
             }
@@ -192,7 +201,7 @@ struct PlateCalculatorView: View {
                         Circle()
                             .fill(plateColor(entry.plate))
                             .frame(width: 12, height: 12)
-                        Text("\(formatWeight(entry.plate)) kg")
+                        Text("\(formatWeight(entry.plate)) \(unitLabel)")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(AppStyle.Colors.text)
                         Spacer()
@@ -261,9 +270,11 @@ struct PlateCalculatorView: View {
 }
 
 #Preview("Standard load") {
-    PlateCalculatorView(targetWeight: 102.5, barbellWeight: 20)
+    PlateCalculatorView(targetWeight: 102.5)
+        .modelContainer(for: UserSettings.self, inMemory: true)
 }
 
 #Preview("Just the bar") {
-    PlateCalculatorView(targetWeight: 20, barbellWeight: 20)
+    PlateCalculatorView(targetWeight: 20)
+        .modelContainer(for: UserSettings.self, inMemory: true)
 }

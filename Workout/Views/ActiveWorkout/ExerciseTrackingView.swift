@@ -21,6 +21,7 @@ struct ExerciseTrackingView: View {
     @State private var editingSet: ExerciseSet?
     @State private var extraSets: Int = 0
     @State private var lastSession: (date: Date, sets: [(weight: Double, reps: Int)])? = nil
+    @State private var showPlateCalculator = false
 
     private static let restTimerKey = "activeRestTimerEndDate"
 
@@ -104,6 +105,19 @@ struct ExerciseTrackingView: View {
         .background(AppStyle.Colors.background)
         .navigationTitle(completedExercise.exercise?.name ?? "Exercise")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showPlateCalculator = true
+                } label: {
+                    Image(systemName: "scalemass")
+                }
+                .disabled(weight <= 0)
+            }
+        }
+        .sheet(isPresented: $showPlateCalculator) {
+            PlateCalculatorView(targetWeight: weight, barbellWeight: 20)
+        }
         .onAppear {
             restoreState()
         }

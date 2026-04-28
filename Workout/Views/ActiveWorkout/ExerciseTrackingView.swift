@@ -14,6 +14,8 @@ struct ExerciseTrackingView: View {
     let modelContext: ModelContext
     let onAllSetsComplete: () -> Void
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var weight: Double = 0
     @State private var reps: Double = 10
     @State private var showRestTimer = false
@@ -378,12 +380,12 @@ struct ExerciseTrackingView: View {
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(width: 32, alignment: .leading)
 
-            Text("— kg")
+            Text(weight > 0 ? "\(formatWeight(weight)) kg" : "— kg")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("\(templateExercise.targetReps)")
+            Text("\(Int(reps))")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -438,6 +440,16 @@ struct ExerciseTrackingView: View {
             }
             .buttonStyle(PrimaryActionButtonStyle(color: weight > 0 ? AppStyle.Colors.brand : AppStyle.Colors.surface3))
             .disabled(weight <= 0)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        } else {
+            Button {
+                dismiss()
+            } label: {
+                Text("Done")
+                    .font(.system(size: 16, weight: .bold))
+            }
+            .buttonStyle(PrimaryActionButtonStyle(color: AppStyle.Colors.success))
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
@@ -566,55 +578,10 @@ struct ExerciseTrackingView: View {
     }
 }
 
-private struct SwipeToRevealDelete<Content: View>: View {
-    let onDelete: () -> Void
-    let content: Content
-
-    @State private var offset: CGFloat = 0
-    private let revealWidth: CGFloat = 68
-
-    init(onDelete: @escaping () -> Void, @ViewBuilder content: () -> Content) {
-        self.onDelete = onDelete
-        self.content = content()
-    }
-
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(role: .destructive, action: {
-                withAnimation(.spring(response: 0.25)) { offset = 0 }
-                onDelete()
-            }) {
-                Image(systemName: "trash")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: revealWidth)
-                    .frame(maxHeight: .infinity)
-                    .background(.red)
-            }
-            .buttonStyle(.plain)
-
-            content
-                .background(AppStyle.Colors.surface1)
-                .offset(x: offset)
-                .gesture(
-                    DragGesture(minimumDistance: 15)
-                        .onChanged { v in
-                            guard abs(v.translation.width) > abs(v.translation.height) else { return }
-                            offset = min(0, v.translation.width)
-                        }
-                        .onEnded { v in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                offset = v.translation.width < -(revealWidth / 2) ? -revealWidth : 0
-                            }
-                        }
-                )
-        }
-        .clipped()
-    }
-}
 
 private struct ExerciseTrackingPreview: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @State private var data: (CompletedExercise, TemplateExercise)?
 
     var body: some View {

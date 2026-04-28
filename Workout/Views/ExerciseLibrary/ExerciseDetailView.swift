@@ -52,46 +52,60 @@ struct ExerciseDetailView: View {
     // MARK: - Hero Card
 
     private var heroCard: some View {
-        HStack(spacing: 16) {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppStyle.Colors.brand.opacity(0.1))
-                .frame(width: 60, height: 60)
-                .overlay(
+        VStack(alignment: .leading, spacing: 0) {
+            if exercise.mediaFileName != nil {
+                ExerciseImageView(
+                    mediaFileName: exercise.mediaFileName,
+                    animated: true,
+                    cornerRadius: 0,
+                    contentMode: .fit
+                )
+                .frame(maxWidth: .infinity)
+            }
+
+            HStack(spacing: 16) {
+                if exercise.mediaFileName == nil {
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(AppStyle.Colors.brand.opacity(0.2), lineWidth: 1)
-                )
-                .overlay(
-                    Image(systemName: "dumbbell")
-                        .font(.system(size: 24))
-                        .foregroundStyle(AppStyle.Colors.brand)
-                )
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Text(exercise.difficulty.rawValue)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(AppStyle.difficultyColor(exercise.difficulty))
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(AppStyle.difficultyColor(exercise.difficulty).opacity(0.13))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                    Text(exercise.primaryMusclesDisplayString)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(AppStyle.Colors.textSecondary)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(AppStyle.Colors.textSecondary.opacity(0.13))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .fill(AppStyle.Colors.brand.opacity(0.1))
+                        .frame(width: 60, height: 60)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(AppStyle.Colors.brand.opacity(0.2), lineWidth: 1)
+                        )
+                        .overlay(
+                            Image(systemName: "dumbbell")
+                                .font(.system(size: 24))
+                                .foregroundStyle(AppStyle.Colors.brand)
+                        )
                 }
 
-                Text(exercise.equipmentDisplayString)
-                    .font(.system(size: 14))
-                    .foregroundStyle(AppStyle.Colors.textSecondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(exercise.difficulty.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AppStyle.difficultyColor(exercise.difficulty))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(AppStyle.difficultyColor(exercise.difficulty).opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                        Text(exercise.primaryMusclesDisplayString)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AppStyle.Colors.textSecondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(AppStyle.Colors.textSecondary.opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+
+                    Text(exercise.equipmentDisplayString)
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppStyle.Colors.textSecondary)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(20)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
         .background(AppStyle.Colors.surface1)
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.large))
         .overlay(

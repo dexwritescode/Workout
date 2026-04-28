@@ -238,22 +238,30 @@ struct ActiveWorkoutView: View {
         let isExerciseDone = completedSetsCount >= templateExercise.targetSets
 
         return HStack(spacing: 14) {
-            // Status circle
+            // Status circle with exercise thumbnail
             ZStack {
-                Circle()
-                    .fill(isExerciseDone ? AppStyle.Colors.success : (isCurrent ? AppStyle.Colors.brand : AppStyle.Colors.surface3))
-                    .frame(width: 32, height: 32)
+                ExerciseImageView(
+                    mediaFileName: templateExercise.exercise?.mediaFileName,
+                    animated: false,
+                    cornerRadius: 18
+                )
+                .frame(width: 36, height: 36)
+                .opacity(isExerciseDone ? 0.35 : 1.0)
 
                 if isExerciseDone {
+                    Circle()
+                        .fill(AppStyle.Colors.success.opacity(0.75))
+                        .frame(width: 36, height: 36)
                     Image(systemName: "checkmark")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
-                } else {
-                    Text("\(index + 1)")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(isCurrent ? .white : AppStyle.Colors.textTertiary)
                 }
             }
+            .frame(width: 36, height: 36)
+            .clipShape(Circle())
+            .overlay(
+                Circle().stroke(isCurrent ? AppStyle.Colors.brand : Color.clear, lineWidth: 2.5)
+            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(templateExercise.exercise?.name ?? "Unknown Exercise")

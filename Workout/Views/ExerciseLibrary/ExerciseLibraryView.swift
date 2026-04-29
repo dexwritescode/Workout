@@ -103,7 +103,7 @@ struct ExerciseLibraryView: View {
                         emptyState("No Results", subtitle: "No exercises match your search.")
                     }
                 } else {
-                    VStack(spacing: 16) {
+                    LazyVStack(spacing: 16) {
                         ForEach(groupedExercises, id: \.0) { muscleName, exercises in
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(muscleName)
@@ -211,6 +211,13 @@ struct ExerciseLibraryView: View {
 
     private func exerciseRow(_ exercise: Exercise, group: String) -> some View {
         HStack(spacing: 12) {
+            ExerciseImageView(
+                mediaFileName: exercise.mediaFileName,
+                animated: false,
+                cornerRadius: 8
+            )
+            .frame(width: 44, height: 44)
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(exercise.name)
                     .font(.system(size: 15, weight: .medium))
@@ -251,6 +258,7 @@ struct ExerciseLibraryView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
+        .contentShape(Rectangle())
     }
 
     private func emptyState(_ title: String, subtitle: String) -> some View {

@@ -23,6 +23,7 @@ struct SeedDataService {
         let primaryMuscles: [String]
         let secondaryMuscles: [String]
         let difficultyLevel: String
+        let mediaFileName: String?
     }
     
     private struct ExerciseFile: Decodable {
@@ -169,6 +170,7 @@ struct SeedDataService {
                 primaryMuscles: primaryMuscles,
                 secondaryMuscles: secondaryMuscles,
                 difficultyLevel: difficulty,
+                mediaFileName: json.mediaFileName,
                 isCustom: false
             )
         }

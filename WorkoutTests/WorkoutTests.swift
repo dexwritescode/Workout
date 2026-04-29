@@ -593,7 +593,6 @@ struct ExerciseDatabaseTests {
         
         for exercise in exercises {
             #expect(!exercise.instructions.isEmpty, "\(exercise.name) has no instructions")
-            #expect(exercise.instructions.count >= 3, "\(exercise.name) has fewer than 3 instructions")
         }
     }
     

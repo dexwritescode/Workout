@@ -50,8 +50,8 @@ struct ExerciseTrackingView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Nav subtitle
-            HStack {
-                Text("\(completedSets.count > 0 ? completedSets.count : 1) of \(targetSets)")
+            HStack(spacing: 6) {
+                Text("\(completedSets.count > 0 ? completedSets.count : 1) of \(targetSets) sets")
                     .font(.system(size: 11))
                     .foregroundStyle(AppStyle.Colors.textTertiary)
                 Text("·")
@@ -75,6 +75,17 @@ struct ExerciseTrackingView: View {
 
             ScrollView {
                 VStack(spacing: 16) {
+                    // Exercise hero
+                    if completedExercise.exercise?.mediaFileName != nil {
+                        ExerciseImageView(
+                            mediaFileName: completedExercise.exercise?.mediaFileName,
+                            animated: true,
+                            cornerRadius: AppStyle.Radius.card,
+                            contentMode: .fit
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+
                     // Rest timer banner
                     if showRestTimer, let endDate = restTimerEndDate {
                         RestTimerView(
@@ -110,6 +121,15 @@ struct ExerciseTrackingView: View {
         .navigationTitle(completedExercise.exercise?.name ?? "Exercise")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if let exercise = completedExercise.exercise {
+                    NavigationLink {
+                        ExerciseDetailView(exercise: exercise)
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showPlateCalculator = true

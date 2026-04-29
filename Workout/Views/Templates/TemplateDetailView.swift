@@ -48,10 +48,16 @@ struct TemplateDetailView: View {
                     } else {
                         VStack(spacing: 6) {
                             ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, te in
-                                Button { exerciseToEdit = te } label: {
-                                    exerciseRow(te, index: index)
+                                if let exercise = te.exercise {
+                                    NavigationLink {
+                                        ExerciseDetailView(exercise: exercise)
+                                    } label: {
+                                        exerciseRow(te, index: index, onEdit: { exerciseToEdit = te })
+                                    }
+                                    .buttonStyle(.plain)
+                                } else {
+                                    exerciseRow(te, index: index, onEdit: { exerciseToEdit = te })
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -152,16 +158,24 @@ struct TemplateDetailView: View {
 
     // MARK: - Exercise Row
 
-    private func exerciseRow(_ te: TemplateExercise, index: Int) -> some View {
+    private func exerciseRow(_ te: TemplateExercise, index: Int, onEdit: @escaping () -> Void) -> some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(AppStyle.Colors.brand.opacity(0.1))
-                .frame(width: 32, height: 32)
-                .overlay(
-                    Text("\(index + 1)")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(AppStyle.Colors.brand)
+            ZStack(alignment: .bottomTrailing) {
+                ExerciseImageView(
+                    mediaFileName: te.exercise?.mediaFileName,
+                    animated: false,
+                    cornerRadius: 8
                 )
+                .frame(width: 40, height: 40)
+                Text("\(index + 1)")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(AppStyle.Colors.brand)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .offset(x: 4, y: 4)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(te.exercise?.name ?? "Unknown")
@@ -188,9 +202,17 @@ struct TemplateDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
+            Button {
+                onEdit()
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+                    .frame(width: 32, height: 32)
+                    .background(AppStyle.Colors.surface2)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -200,6 +222,7 @@ struct TemplateDetailView: View {
             RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
                 .stroke(AppStyle.Colors.border, lineWidth: 1)
         )
+        .contentShape(Rectangle())
     }
 
     // MARK: - Empty State

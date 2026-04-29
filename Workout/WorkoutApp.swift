@@ -22,12 +22,16 @@ struct WorkoutApp: App {
             UserSettings.self,
             MuscleRecoveryState.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        let inMemory = CommandLine.arguments.contains("--ui-testing")
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Persistent store unavailable (e.g. simulator sandbox in CI) — fall back to in-memory.
+            let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            return try! ModelContainer(for: schema, configurations: [fallback])
         }
     }()
 

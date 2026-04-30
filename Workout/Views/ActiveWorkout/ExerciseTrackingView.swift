@@ -26,6 +26,7 @@ struct ExerciseTrackingView: View {
     @State private var showPlateCalculator = false
     @State private var editingOriginalWeight: Double = 0
     @State private var editingOriginalReps: Int = 0
+    @State private var isCurrentRowEditing: Bool = false
 
     private static let restTimerKey = "activeRestTimerEndDate"
 
@@ -270,10 +271,17 @@ struct ExerciseTrackingView: View {
                     let s = done ? completedSets[i] : nil
                     let isCurrent = i == completedSets.count && !allSetsComplete
                     let isEditing = editingSet != nil && editingSet?.id == s?.id
-                    let isActiveInput = isCurrent || isEditing
 
-                    if isActiveInput {
-                        inputRow(index: i, isEditing: isEditing)
+                    if isCurrent {
+                        if isCurrentRowEditing {
+                            inputRow(index: i, isEditing: false)
+                        } else {
+                            SwipeToRevealDelete(onDelete: { deleteExtraRow() }) {
+                                currentSetDisplayRow(index: i)
+                            }
+                        }
+                    } else if isEditing {
+                        inputRow(index: i, isEditing: true)
                     } else if done {
                         SwipeToRevealDelete(onDelete: { deleteSet(s!) }) {
                             Button { beginEditing(s!) } label: {
@@ -394,18 +402,19 @@ struct ExerciseTrackingView: View {
     }
 
     private func futureRow(index: Int) -> some View {
-        HStack {
+        let planned = plannedValues(forSetIndex: index)
+        return HStack {
             Text("\(index + 1)")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(width: 32, alignment: .leading)
 
-            Text(weight > 0 ? "\(formatWeight(weight)) kg" : "— kg")
+            Text(planned.weight > 0 ? "\(formatWeight(planned.weight)) kg" : "— kg")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("\(Int(reps))")
+            Text("\(planned.reps)")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -414,6 +423,44 @@ struct ExerciseTrackingView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 11)
+    }
+
+    private func currentSetDisplayRow(index: Int) -> some View {
+        HStack(spacing: 8) {
+            Text("\(index + 1)")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(AppStyle.Colors.brand)
+                .frame(width: 32, alignment: .leading)
+
+            Text(weight > 0 ? "\(formatWeight(weight)) kg" : "— kg")
+                .font(AppStyle.Typography.mono(14, weight: .bold))
+                .foregroundStyle(weight > 0 ? AppStyle.Colors.text : AppStyle.Colors.textTertiary)
+                .multilineTextAlignment(.center)
+                .frame(height: 36)
+                .frame(maxWidth: .infinity)
+                .background(AppStyle.Colors.surface2)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppStyle.Colors.brand.opacity(0.25), lineWidth: 1))
+                .contentShape(Rectangle())
+                .onTapGesture { isCurrentRowEditing = true }
+
+            Text("\(Int(reps))")
+                .font(AppStyle.Typography.mono(14, weight: .bold))
+                .foregroundStyle(AppStyle.Colors.text)
+                .multilineTextAlignment(.center)
+                .frame(height: 36)
+                .frame(maxWidth: .infinity)
+                .background(AppStyle.Colors.surface2)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppStyle.Colors.brand.opacity(0.25), lineWidth: 1))
+                .contentShape(Rectangle())
+                .onTapGesture { isCurrentRowEditing = true }
+
+            Spacer().frame(width: 40)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(AppStyle.Colors.brand.opacity(0.04))
     }
 
     // MARK: - All Complete
@@ -517,6 +564,7 @@ struct ExerciseTrackingView: View {
     // MARK: - Actions
 
     private func completeCurrentSet() {
+        let nextSetIndex = currentSetNumber  // 0-based index of the upcoming set after this one
         let newSet = ExerciseSet(
             setNumber: currentSetNumber,
             weight: weight,
@@ -529,6 +577,8 @@ struct ExerciseTrackingView: View {
         modelContext.insert(newSet)
         completedExercise.sets.append(newSet)
 
+        isCurrentRowEditing = false
+
         if completedSets.count >= targetSets {
             UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
             clearRestTimer()
@@ -539,10 +589,23 @@ struct ExerciseTrackingView: View {
             restTimerEndDate = endDate
             showRestTimer = true
             UserDefaults.standard.set(endDate.timeIntervalSince1970, forKey: Self.restTimerKey)
+            let planned = plannedValues(forSetIndex: nextSetIndex)
+            if planned.weight > 0 {
+                weight = planned.weight
+                reps = Double(planned.reps)
+            }
         }
     }
 
     // MARK: - State Restoration
+
+    private func plannedValues(forSetIndex index: Int) -> (weight: Double, reps: Int) {
+        let targets = templateExercise.setTargets.sorted { $0.order < $1.order }
+        if index < targets.count, targets[index].targetWeight > 0 {
+            return (targets[index].targetWeight, targets[index].targetReps)
+        }
+        return (templateExercise.targetWeight, templateExercise.targetReps)
+    }
 
     private func loadLastSession() {
         guard let exercise = completedExercise.exercise else { return }
@@ -584,16 +647,19 @@ struct ExerciseTrackingView: View {
             }
         }
 
-        // Pre-fill: current session's last set > last session's first set > template target
+        // Pre-fill: current session's last set > template plan > last session
         if let lastSet = completedSets.last {
             weight = lastSet.weight
             reps = Double(lastSet.reps)
-        } else if let firstSet = lastSession?.sets.first {
-            weight = firstSet.weight
-            reps = Double(firstSet.reps)
-        } else if templateExercise.targetWeight > 0 {
-            weight = templateExercise.targetWeight
-            reps = Double(templateExercise.targetReps)
+        } else {
+            let planned = plannedValues(forSetIndex: 0)
+            if planned.weight > 0 {
+                weight = planned.weight
+                reps = Double(planned.reps)
+            } else if let firstSet = lastSession?.sets.first {
+                weight = firstSet.weight
+                reps = Double(firstSet.reps)
+            }
         }
     }
 }

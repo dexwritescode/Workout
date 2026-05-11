@@ -1,4 +1,5 @@
 # Claude Code — local AI context, not project source
+.claude/
 Memory/
 CLAUDE.md
 AGENTS.md

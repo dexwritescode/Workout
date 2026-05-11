@@ -1,9 +1,12 @@
 # Claude Code — local AI context, not project source
+.claude/
 Memory/
 CLAUDE.md
+AGENTS.md
 
 # Local signing config — contains developer team ID, never commit
 Config/Signing.xcconfig
+ios/Config/Signing.xcconfig
 
 # Xcode
 *.xcuserstate
@@ -24,3 +27,9 @@ build/
 # Swift Package Manager
 .build/
 .swiftpm/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/

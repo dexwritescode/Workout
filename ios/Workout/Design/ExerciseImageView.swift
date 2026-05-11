@@ -65,10 +65,7 @@ struct ExerciseImageView: View {
     }
 
     private func loadFrame(name: String, index: Int) -> UIImage? {
-        guard
-            let bundleURL = Bundle.main.url(forResource: "Media", withExtension: "bundle"),
-            let mediaBundle = Bundle(url: bundleURL),
-            let path = mediaBundle.path(forResource: "\(index)", ofType: "jpg", inDirectory: name)
+        guard let path = Bundle.main.path(forResource: "\(index)", ofType: "jpg", inDirectory: "media/\(name)")
         else { return nil }
         return UIImage(contentsOfFile: path)
     }

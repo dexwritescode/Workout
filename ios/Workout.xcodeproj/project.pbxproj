@@ -23,11 +23,18 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXBuildFile section */
+		DFA0000000000001AABBCC04 /* exercises.json in Resources */ = {isa = PBXBuildFile; fileRef = DFA0000000000001AABBCC01 /* exercises.json */; };
+		DFA0000000000001AABBCC05 /* media in Resources */ = {isa = PBXBuildFile; fileRef = DFA0000000000001AABBCC02 /* media */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		DF00CCCC111100000000AAA1 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		DF380F762F04DD1F0040D500 /* Workout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Workout.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF380F882F04DD200040D500 /* WorkoutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkoutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF380F922F04DD200040D500 /* WorkoutUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkoutUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DFA0000000000001AABBCC01 /* exercises.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = exercises.json; path = ../shared/exercises.json; sourceTree = "<group>"; };
+		DFA0000000000001AABBCC02 /* media */ = {isa = PBXFileReference; lastKnownFileType = folder; name = media; path = ../shared/media; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -57,11 +64,6 @@
 		DF380F952F04DD200040D500 /* WorkoutUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = WorkoutUITests;
-			sourceTree = "<group>";
-		};
-		DF8DF0EE2F638205002E4CBF /* Memory */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Memory;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,12 +105,22 @@
 			isa = PBXGroup;
 			children = (
 				DF00CCCC111100000000BBB1 /* Config */,
-				DF8DF0EE2F638205002E4CBF /* Memory */,
+				DFA0000000000001AABBCC03 /* shared */,
 				DF380F782F04DD1F0040D500 /* Workout */,
 				DF380F8B2F04DD200040D500 /* WorkoutTests */,
 				DF380F952F04DD200040D500 /* WorkoutUITests */,
 				DF380F772F04DD1F0040D500 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		DFA0000000000001AABBCC03 /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				DFA0000000000001AABBCC01 /* exercises.json */,
+				DFA0000000000001AABBCC02 /* media */,
+			);
+			name = shared;
+			path = ../shared;
 			sourceTree = "<group>";
 		};
 		DF380F772F04DD1F0040D500 /* Products */ = {
@@ -138,7 +150,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DF380F782F04DD1F0040D500 /* Workout */,
-				DF8DF0EE2F638205002E4CBF /* Memory */,
 			);
 			name = Workout;
 			packageProductDependencies = (
@@ -242,6 +253,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DFA0000000000001AABBCC04 /* exercises.json in Resources */,
+				DFA0000000000001AABBCC05 /* media in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

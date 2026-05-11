@@ -27,15 +27,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData
-          key: deriveddata-${{ runner.os }}-${{ hashFiles('**/*.swift', 'Workout.xcodeproj/project.pbxproj') }}
+          key: deriveddata-${{ runner.os }}-${{ hashFiles('**/*.swift', 'ios/Workout.xcodeproj/project.pbxproj') }}
           restore-keys: deriveddata-${{ runner.os }}-
 
       - name: Create signing config
-        run: cp Config/Signing.xcconfig.example Config/Signing.xcconfig
+        run: cp -f ios/Config/Signing.xcconfig.example ios/Config/Signing.xcconfig
 
       - name: Build
         run: |
           xcodebuild \
+            -project ios/Workout.xcodeproj \
             -scheme Workout \
             -configuration Debug \
             -sdk iphonesimulator \

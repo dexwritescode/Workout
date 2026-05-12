@@ -6,11 +6,13 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'android/**'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'android/**'
 
 concurrency:
   group: test-${{ github.ref }}
@@ -31,6 +33,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: deriveddata-${{ runner.os }}-${{ matrix.device }}-${{ hashFiles('**/*.swift', 'ios/Workout.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            deriveddata-${{ runner.os }}-${{ matrix.device }}-
+            deriveddata-${{ runner.os }}-
 
       - name: Create signing config
         run: cp -f ios/Config/Signing.xcconfig.example ios/Config/Signing.xcconfig

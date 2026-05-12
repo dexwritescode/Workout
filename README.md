@@ -1,10 +1,7 @@
 # Workout
 
-**iOS**
 [![iOS Build](https://github.com/dexwritescode/Workout/actions/workflows/build.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/build.yml)
 [![iOS Test](https://github.com/dexwritescode/Workout/actions/workflows/test.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/test.yml)
-
-**Android**
 [![Android Build](https://github.com/dexwritescode/Workout/actions/workflows/android-build.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/android-build.yml)
 [![Android Test](https://github.com/dexwritescode/Workout/actions/workflows/android-test.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/android-test.yml)
 

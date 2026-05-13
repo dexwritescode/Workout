@@ -244,6 +244,7 @@ class ExportImportTest {
 
         val userSettingsDao = object : UserSettingsDao {
             override fun get(): Flow<UserSettings?> = flowOf(settings)
+            override fun getAll(): Flow<List<UserSettings>> = flowOf(listOfNotNull(settings))
             override suspend fun getOnce() = settings
             override suspend fun insert(s: UserSettings) { settings = s }
             override suspend fun update(s: UserSettings) { settings = s }

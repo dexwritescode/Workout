@@ -13,6 +13,9 @@ interface UserSettingsDao {
     @Query("SELECT * FROM user_settings LIMIT 1")
     fun get(): Flow<UserSettings?>
 
+    @Query("SELECT * FROM user_settings")
+    fun getAll(): Flow<List<UserSettings>>
+
     @Query("SELECT * FROM user_settings LIMIT 1")
     suspend fun getOnce(): UserSettings?
 

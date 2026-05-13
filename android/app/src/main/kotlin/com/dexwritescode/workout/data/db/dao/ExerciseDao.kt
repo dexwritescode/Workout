@@ -20,6 +20,12 @@ interface ExerciseDao {
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int
 
+    @Query("SELECT * FROM exercises WHERE name = :name LIMIT 1")
+    suspend fun getByName(name: String): Exercise?
+
+    @Query("SELECT * FROM exercises ORDER BY name ASC")
+    suspend fun getAllOnce(): List<Exercise>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(exercise: Exercise)
 

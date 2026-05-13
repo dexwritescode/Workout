@@ -20,6 +20,12 @@ interface WorkoutSessionDao {
     @Query("SELECT * FROM workout_sessions WHERE isCompleted = 0 LIMIT 1")
     suspend fun getActiveSession(): WorkoutSession?
 
+    @Query("SELECT * FROM workout_sessions WHERE isCompleted = 1 ORDER BY startTime DESC")
+    suspend fun getAllCompleted(): List<WorkoutSession>
+
+    @Query("SELECT * FROM workout_sessions ORDER BY startTime DESC")
+    suspend fun getAllOnce(): List<WorkoutSession>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(session: WorkoutSession)
 

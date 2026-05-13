@@ -37,6 +37,12 @@ android {
     buildFeatures {
         compose = true
     }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("../../shared")
+        }
+    }
 }
 
 ksp {
@@ -52,6 +58,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.10.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 
     // Room
     implementation("androidx.room:room-runtime:2.7.1")

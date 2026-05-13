@@ -14,6 +14,9 @@ interface CompletedExerciseDao {
     @Query("SELECT * FROM completed_exercises WHERE sessionId = :sessionId ORDER BY `order` ASC")
     fun getBySession(sessionId: String): Flow<List<CompletedExercise>>
 
+    @Query("SELECT * FROM completed_exercises WHERE sessionId = :sessionId ORDER BY `order` ASC")
+    suspend fun getBySessionOnce(sessionId: String): List<CompletedExercise>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(completedExercise: CompletedExercise)
 

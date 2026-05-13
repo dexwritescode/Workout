@@ -17,6 +17,9 @@ interface WorkoutTemplateDao {
     @Query("SELECT * FROM workout_templates WHERE id = :id")
     suspend fun getById(id: String): WorkoutTemplate?
 
+    @Query("SELECT COUNT(*) FROM workout_templates")
+    suspend fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(template: WorkoutTemplate)
 

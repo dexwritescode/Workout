@@ -14,6 +14,9 @@ interface ExerciseSetDao {
     @Query("SELECT * FROM exercise_sets WHERE completedExerciseId = :completedExerciseId ORDER BY setNumber ASC")
     fun getByCompletedExercise(completedExerciseId: String): Flow<List<ExerciseSet>>
 
+    @Query("SELECT * FROM exercise_sets WHERE completedExerciseId = :completedExerciseId ORDER BY setNumber ASC")
+    suspend fun getByCompletedExerciseOnce(completedExerciseId: String): List<ExerciseSet>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(exerciseSet: ExerciseSet)
 

@@ -16,6 +16,9 @@ interface MuscleRecoveryStateDao {
     @Query("SELECT * FROM muscle_recovery_states WHERE muscleGroup = :muscleGroup")
     suspend fun getByMuscleGroup(muscleGroup: String): MuscleRecoveryState?
 
+    @Query("SELECT COUNT(*) FROM muscle_recovery_states")
+    suspend fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(state: MuscleRecoveryState)
 

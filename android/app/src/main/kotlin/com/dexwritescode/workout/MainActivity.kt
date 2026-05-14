@@ -34,6 +34,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.dexwritescode.workout.ui.recovery.RecoveryDashboardScreen
 import com.dexwritescode.workout.ui.theme.AppColors
 import com.dexwritescode.workout.ui.theme.WorkoutTheme
 import com.dexwritescode.workout.ui.workout.WorkoutNavGraph
@@ -105,7 +106,7 @@ private fun AppShell() {
                 val workoutNav = rememberNavController()
                 WorkoutNavGraph(navController = workoutNav, context = context)
             }
-            composable(Tab.Recovery.route) { PlaceholderTab("Recovery") }
+            composable(Tab.Recovery.route) { RecoveryDashboardScreen() }
             composable(Tab.History.route) { PlaceholderTab("History") }
             composable(Tab.Exercises.route) { PlaceholderTab("Exercises") }
             composable(Tab.Settings.route) { PlaceholderTab("Settings") }

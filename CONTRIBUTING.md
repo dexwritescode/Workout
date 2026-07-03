@@ -45,8 +45,8 @@ Enums stored as `String` raw values with typed computed accessors. `exercises.js
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/dexwritescode/Workout-iOS.git
-cd Workout-iOS
+git clone https://github.com/dexwritescode/Workout.git
+cd Workout
 
 # 2. Set up code signing (required once before opening in Xcode)
 cp Config/Signing.xcconfig.example Config/Signing.xcconfig
@@ -76,7 +76,7 @@ xcodebuild clean test -scheme Workout \
 ## Repo layout
 
 ```
-Workout-iOS/
+Workout/
 ├── Workout.xcodeproj/
 ├── Workout/                iOS app source
 │   ├── Models/Domain/      Exercise, WorkoutTemplate (all 9 @Model classes)

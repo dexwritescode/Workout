@@ -1,7 +1,7 @@
 # Workout
 
-[![iOS Build](https://github.com/dexwritescode/Workout-iOS/actions/workflows/ios-build.yml/badge.svg)](https://github.com/dexwritescode/Workout-iOS/actions/workflows/ios-build.yml)
-[![iOS Test](https://github.com/dexwritescode/Workout-iOS/actions/workflows/ios-test.yml/badge.svg)](https://github.com/dexwritescode/Workout-iOS/actions/workflows/ios-test.yml)
+[![iOS Build](https://github.com/dexwritescode/Workout/actions/workflows/ios-build.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/ios-build.yml)
+[![iOS Test](https://github.com/dexwritescode/Workout/actions/workflows/ios-test.yml/badge.svg)](https://github.com/dexwritescode/Workout/actions/workflows/ios-test.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 
 Offline-first workout tracking app for iPhone. No account, no cloud, no subscription — your data stays on your device.

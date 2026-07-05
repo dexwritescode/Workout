@@ -51,18 +51,17 @@ struct SmartWorkoutView: View {
             }
             .background(AppStyle.Colors.background)
 
-            if let workout = generatedWorkout {
+            if let workout = generatedWorkout, !coordinator.isActive {
                 Button {
                     startWorkout(workout)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "play.fill")
                             .font(.system(size: 15))
-                        Text(coordinator.isActive ? "Workout In Progress" : "Start Workout")
+                        Text("Start Workout")
                     }
                 }
                 .buttonStyle(PrimaryActionButtonStyle())
-                .disabled(coordinator.isActive)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
             }

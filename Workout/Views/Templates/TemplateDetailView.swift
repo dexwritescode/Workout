@@ -71,23 +71,22 @@ struct TemplateDetailView: View {
             }
             .background(AppStyle.Colors.background)
 
-            Divider()
-                .overlay(AppStyle.Colors.border)
-
-            Button {
-                coordinator.start(template: template, modelContext: modelContext)
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 15))
-                    Text(coordinator.isActive ? "Workout In Progress" : "Start Workout")
+            if !coordinator.isActive {
+                Button {
+                    coordinator.start(template: template, modelContext: modelContext)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 15))
+                        Text("Start Workout")
+                    }
                 }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .disabled(sortedExercises.isEmpty)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(AppStyle.Colors.background)
             }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .disabled(sortedExercises.isEmpty || coordinator.isActive)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(AppStyle.Colors.background)
         }
         .background(AppStyle.Colors.background)
         .navigationTitle(template.name)

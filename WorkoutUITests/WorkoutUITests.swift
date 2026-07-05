@@ -51,4 +51,42 @@ final class WorkoutUITests: XCTestCase {
         XCTAssertTrue(startWorkoutButton.waitForExistence(timeout: 4), "Expected to auto-return to the template detail screen")
         XCTAssertFalse(confirmation.exists, "Confirmation screen should be gone after auto-dismiss")
     }
+
+    @MainActor
+    func testWRK25_startWorkoutButtonHiddenInTemplateDetailWhileWorkoutActive() throws {
+        let app = XCUIApplication()
+
+        app.staticTexts["Push Day A"].tap()
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected Start Workout button before any workout is active")
+
+        app.buttons["Start Workout"].tap()
+
+        let minimizeButton = app.buttons["Minimize Workout"]
+        XCTAssertTrue(minimizeButton.waitForExistence(timeout: 5), "Expected the active workout screen with a minimize button")
+        minimizeButton.tap()
+
+        // Back on the template detail screen, now with a workout active in the background.
+        XCTAssertTrue(app.staticTexts["Push Day A"].waitForExistence(timeout: 5), "Expected to return to the template detail screen")
+        XCTAssertFalse(app.buttons["Start Workout"].exists, "Start Workout button should be hidden, not just disabled, while a workout is active")
+    }
+
+    @MainActor
+    func testWRK25_startWorkoutButtonHiddenInSmartWorkoutWhileWorkoutActive() throws {
+        let app = XCUIApplication()
+
+        app.staticTexts["Push Day A"].tap()
+        app.buttons["Start Workout"].tap()
+
+        let minimizeButton = app.buttons["Minimize Workout"]
+        XCTAssertTrue(minimizeButton.waitForExistence(timeout: 5), "Expected the active workout screen with a minimize button")
+        minimizeButton.tap()
+
+        // Tapping the already-selected Workout tab pops its NavigationStack back to the template list.
+        app.buttons["Workout"].tap()
+        XCTAssertTrue(app.staticTexts["Smart Workout"].waitForExistence(timeout: 5), "Expected to be back on the template list")
+        app.staticTexts["Smart Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "Expected a generated workout preview")
+        XCTAssertFalse(app.buttons["Start Workout"].exists, "Start Workout button should be hidden in Smart Workout while a workout is active")
+    }
 }

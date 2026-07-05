@@ -63,6 +63,7 @@ struct ActiveWorkoutView: View {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 15, weight: .semibold))
                 }
+                .accessibilityLabel("Minimize Workout")
             }
             if viewModel.state == .inProgress {
                 ToolbarItem(placement: .primaryAction) {

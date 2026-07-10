@@ -383,9 +383,66 @@ struct WorkoutTemplateTests {
             description: "Push day for Push/Pull/Legs split",
             isPreBuilt: true
         )
-        
+
         #expect(template.isPreBuilt == true)
         #expect(template.templateDescription == "Push day for Push/Pull/Legs split")
+    }
+
+    @Test("WorkoutTemplate initializes with isDraft false by default")
+    func templateDefaultsToNotDraft() async throws {
+        let template = WorkoutTemplate(name: "Push Day")
+
+        #expect(template.isDraft == false)
+    }
+
+    @Test("WorkoutTemplate.draft creates a single isDraft-flagged row")
+    func draftCreatesFlaggedRow() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+
+        #expect(draft.isDraft == true)
+        let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+        #expect(allTemplates.count == 1)
+        #expect(allTemplates.first?.id == draft.id)
+    }
+
+    @Test("WorkoutTemplate.draft returns the same row on repeated calls")
+    func draftIsSingleton() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let first = WorkoutTemplate.draft(in: context)
+        let second = WorkoutTemplate.draft(in: context)
+
+        #expect(first.id == second.id)
+        let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+        #expect(allTemplates.count == 1, "Calling draft(in:) again should not create a second row")
+    }
+
+    @Test("Draft rows are excluded from a non-draft template fetch")
+    func draftExcludedFromNonDraftFetch() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+        context.insert(WorkoutTemplate(name: "Push Day A"))
+        _ = WorkoutTemplate.draft(in: context)
+
+        let nonDraftTemplates = WorkoutTemplate.nonDraftTemplates(in: context)
+
+        #expect(nonDraftTemplates.count == 1)
+        #expect(nonDraftTemplates.first?.name == "Push Day A")
+    }
+
+    /// Returns a fresh in-memory container. Callers MUST hold the returned container for the
+    /// duration of the test — `ModelContext` does not keep its `ModelContainer` alive, and a
+    /// predicate fetch against a deallocated container's schema traps in
+    /// `Schema.KeyPathCache.validateAndCache` (EXC_BREAKPOINT).
+    @MainActor
+    private static func makeContainer() throws -> ModelContainer {
+        let schema = Schema(SchemaV1.models)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [config])
     }
 }
 
@@ -594,7 +651,35 @@ struct ExerciseDatabaseTests {
         let secondCount = try context.fetchCount(FetchDescriptor<Exercise>())
         #expect(secondCount == afterCount)
     }
-    
+
+    @Test("SeedDataService still seeds the sample template when a draft template already exists")
+    @MainActor
+    func seedDataServiceSeedsSampleTemplateAlongsideDraft() async throws {
+        let schema = Schema([
+            Exercise.self,
+            TemplateExercise.self,
+            TemplateSet.self,
+            WorkoutTemplate.self,
+            WorkoutSession.self,
+            CompletedExercise.self,
+            ExerciseSet.self,
+            UserSettings.self,
+            MuscleRecoveryState.self,
+        ])
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(for: schema, configurations: [config])
+        let context = container.mainContext
+
+        // Simulate the draft row already existing before seeding ever runs.
+        _ = WorkoutTemplate.draft(in: context)
+
+        SeedDataService.seedIfNeeded(modelContext: context)
+
+        let nonDraftTemplates = WorkoutTemplate.nonDraftTemplates(in: context)
+        #expect(nonDraftTemplates.count == 1, "The real sample template should still be seeded despite the draft row existing")
+        #expect(nonDraftTemplates.first?.isPreBuilt == true)
+    }
+
     // MARK: - Helper
     
     private func loadExercises() throws -> [ExerciseJSON] {

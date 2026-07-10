@@ -19,15 +19,16 @@ final class WorkoutTemplate {
     var name: String
     var templateDescription: String
     var isPreBuilt: Bool
+    var isDraft: Bool = false
     var createdDate: Date
     var lastUsedDate: Date?
-    
+
     @Relationship(deleteRule: .cascade, inverse: \TemplateExercise.template)
     var exercises: [TemplateExercise]
-    
+
     @Relationship(deleteRule: .nullify, inverse: \WorkoutSession.template)
     var sessions: [WorkoutSession]?
-    
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -41,6 +42,38 @@ final class WorkoutTemplate {
         self.isPreBuilt = isPreBuilt
         self.createdDate = createdDate
         self.exercises = []
+    }
+
+    // MARK: - Draft (Smart Workout staging area)
+
+    /// Returns the single scratch template used to stage a Smart Workout draft before it's
+    /// started (see WRK-51/WRK-52). Created lazily on first use, never seeded at launch.
+    /// `isDraft` is set on the object before it is ever inserted/saved, so there is no
+    /// persisted state where a draft row exists with `isDraft == false`.
+    static func draft(in context: ModelContext) -> WorkoutTemplate {
+        var descriptor = FetchDescriptor<WorkoutTemplate>(
+            predicate: #Predicate { $0.isDraft == true }
+        )
+        descriptor.fetchLimit = 1
+        if let existing = try? context.fetch(descriptor).first {
+            return existing
+        }
+
+        let draft = WorkoutTemplate(name: "Draft")
+        draft.isDraft = true
+        context.insert(draft)
+        try? context.save()
+        return draft
+    }
+
+    /// Returns all real, user-visible templates — excludes the scratch draft row.
+    /// Shared by `TemplatePickerView`'s query and anywhere else that lists templates.
+    static func nonDraftTemplates(in context: ModelContext) -> [WorkoutTemplate] {
+        var descriptor = FetchDescriptor<WorkoutTemplate>(
+            predicate: #Predicate { $0.isDraft == false }
+        )
+        descriptor.sortBy = [SortDescriptor(\.name)]
+        return (try? context.fetch(descriptor)) ?? []
     }
 }
 

@@ -34,8 +34,8 @@
 		DF380F762F04DD1F0040D500 /* Workout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Workout.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF380F882F04DD200040D500 /* WorkoutTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkoutTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF380F922F04DD200040D500 /* WorkoutUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WorkoutUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		DFA0000000000001AABBCC01 /* exercises.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = exercises.json; path = exercises.json; sourceTree = "<group>"; };
-		DFA0000000000001AABBCC02 /* media */ = {isa = PBXFileReference; lastKnownFileType = folder; name = media; path = media; sourceTree = "<group>"; };
+		DFA0000000000001AABBCC01 /* exercises.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = exercises.json; sourceTree = "<group>"; };
+		DFA0000000000001AABBCC02 /* media */ = {isa = PBXFileReference; lastKnownFileType = folder; path = media; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -131,9 +131,8 @@
 				DFA0000000000001AABBCC01 /* exercises.json */,
 				DFA0000000000001AABBCC02 /* media */,
 			);
-			name = resources;
 			path = resources;
-			sourceTree = "SOURCE_ROOT";
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 

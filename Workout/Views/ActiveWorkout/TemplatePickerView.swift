@@ -10,8 +10,13 @@ import SwiftUI
 import SwiftData
 
 struct TemplatePickerView: View {
+    private static let isNotDraft = false
+
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \WorkoutTemplate.name) private var templates: [WorkoutTemplate]
+    @Query(
+        filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
+        sort: \WorkoutTemplate.name
+    ) private var templates: [WorkoutTemplate]
 
     @State private var showCreateTemplate = false
     @State private var templateToEdit: WorkoutTemplate?

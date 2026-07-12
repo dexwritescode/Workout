@@ -7,7 +7,7 @@
 import SwiftData
 
 enum SchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 2, 0)
+    static var versionIdentifier = Schema.Version(1, 3, 0)
     static var models: [any PersistentModel.Type] {
         [
             Exercise.self,

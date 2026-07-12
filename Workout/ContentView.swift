@@ -19,7 +19,7 @@ struct ContentView: View {
         TabView {
             Tab("Workout", systemImage: "figure.strengthtraining.traditional") {
                 NavigationStack {
-                    TemplatePickerView()
+                    WorkoutStagingView()
                 }
             }
 

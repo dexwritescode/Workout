@@ -3,7 +3,8 @@
 //  TemplatePickerView.swift
 //  Workout
 //
-//  Workout tab: Smart Workout gradient card + template list rows.
+//  Dual-mode template list: Manage mode (CRUD, reached via a toolbar button from
+//  WorkoutStagingView) and Pick mode (onSelect provided, used by "Load Template").
 //
 
 import SwiftUI
@@ -13,10 +14,15 @@ struct TemplatePickerView: View {
     private static let isNotDraft = false
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @Query(
         filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
         sort: \WorkoutTemplate.name
     ) private var templates: [WorkoutTemplate]
+
+    /// Pick mode when provided (tapping a row selects and dismisses); Manage mode when nil
+    /// (tapping a row opens the template for editing).
+    var onSelect: ((WorkoutTemplate) -> Void)? = nil
 
     @State private var showCreateTemplate = false
     @State private var templateToEdit: WorkoutTemplate?
@@ -24,145 +30,96 @@ struct TemplatePickerView: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        List {
-            // Header
-            VStack(alignment: .leading, spacing: 4) {
-                Text(dayOfWeek)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.textTertiary)
-                    .textCase(.uppercase)
-                    .tracking(0.6)
-                Text("Workouts")
-                    .font(.system(size: 26, weight: .heavy))
-                    .foregroundStyle(AppStyle.Colors.text)
-            }
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 4, trailing: 16))
-
-            // Smart Workout card
-            NavigationLink(destination: SmartWorkoutView()) {
-                smartWorkoutCard
-            }
-            .buttonStyle(.plain)
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 20, trailing: 16))
-
-            // Templates
-            if templates.isEmpty {
-                emptyState
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
-            } else {
-                Text("My Templates")
-                    .sectionHeader()
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 10, trailing: 16))
-
-                ForEach(templates) { template in
-                    NavigationLink(destination: TemplateDetailView(template: template)) {
-                        templateRow(template)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            templateToDelete = template
-                            showDeleteAlert = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        .tint(.red)
-                        Button {
-                            templateToEdit = template
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
-                        .tint(AppStyle.Colors.brand)
+        NavigationStack {
+            List {
+                if templates.isEmpty {
+                    emptyState
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                } else {
+                    ForEach(templates) { template in
+                        templateRowLink(template)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 8, trailing: 16))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    templateToDelete = template
+                                    showDeleteAlert = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .tint(.red)
+                                Button {
+                                    templateToEdit = template
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(AppStyle.Colors.brand)
+                            }
                     }
                 }
             }
-        }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(AppStyle.Colors.background)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showCreateTemplate = true
-                } label: {
-                    Image(systemName: "plus")
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(AppStyle.Colors.background)
+            .navigationTitle(onSelect == nil ? "Manage Templates" : "Load Template")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showCreateTemplate = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(AppStyle.Colors.textSecondary)
                 }
             }
-        }
-        .sheet(isPresented: $showCreateTemplate) {
-            TemplateEditorView()
-        }
-        .sheet(item: $templateToEdit) { template in
-            TemplateEditorView(template: template)
-        }
-        .alert("Delete \"\(templateToDelete?.name ?? "")\"?", isPresented: $showDeleteAlert) {
-            Button("Delete", role: .destructive) {
-                if let t = templateToDelete {
-                    modelContext.delete(t)
-                    templateToDelete = nil
-                }
+            .sheet(isPresented: $showCreateTemplate) {
+                TemplateEditorView()
             }
-            Button("Cancel", role: .cancel) { templateToDelete = nil }
-        } message: {
-            Text("This cannot be undone.")
-        }
-    }
-
-    // MARK: - Smart Workout Card
-
-    private var smartWorkoutCard: some View {
-        ZStack(alignment: .topTrailing) {
-            Circle()
-                .fill(.white.opacity(0.08))
-                .frame(width: 100, height: 100)
-                .offset(x: 20, y: -20)
-            Circle()
-                .fill(.white.opacity(0.05))
-                .frame(width: 80, height: 80)
-                .offset(x: -10, y: 40)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.95))
-                    Text("Smart Workout")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.95))
-                }
-
-                Text("Tailored to your muscle recovery")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.7))
+            .sheet(item: $templateToEdit) { template in
+                TemplateEditorView(template: template)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .alert("Delete \"\(templateToDelete?.name ?? "")\"?", isPresented: $showDeleteAlert) {
+                Button("Delete", role: .destructive) {
+                    if let t = templateToDelete {
+                        modelContext.delete(t)
+                        templateToDelete = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) { templateToDelete = nil }
+            } message: {
+                Text("This cannot be undone.")
+            }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .background(
-            LinearGradient(
-                colors: [AppStyle.Colors.brand, Color(hex: 0xCC3520)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.large))
-        .shadow(color: AppStyle.Colors.brand.opacity(0.35), radius: 12, y: 4)
     }
 
     // MARK: - Template Row
+
+    @ViewBuilder
+    private func templateRowLink(_ template: WorkoutTemplate) -> some View {
+        if let onSelect {
+            Button {
+                onSelect(template)
+                dismiss()
+            } label: {
+                templateRow(template)
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button {
+                templateToEdit = template
+            } label: {
+                templateRow(template)
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     private func templateRow(_ template: WorkoutTemplate) -> some View {
         HStack(spacing: 14) {
@@ -237,17 +194,9 @@ struct TemplatePickerView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
-
-    private var dayOfWeek: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: Date())
-    }
 }
 
 #Preview {
-    NavigationStack {
-        TemplatePickerView()
-    }
-    .modelContainer(for: WorkoutTemplate.self, inMemory: true)
+    TemplatePickerView()
+        .modelContainer(for: WorkoutTemplate.self, inMemory: true)
 }

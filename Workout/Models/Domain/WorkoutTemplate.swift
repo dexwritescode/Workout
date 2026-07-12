@@ -23,6 +23,11 @@ final class WorkoutTemplate {
     var createdDate: Date
     var lastUsedDate: Date?
 
+    /// The real template this draft's exercises were last loaded from, if any (nil after a fresh
+    /// AI generation). Meaningful only when `isDraft == true` — see WRK-53.
+    var sourceTemplateID: UUID? = nil
+    var timesStarted: Int = 0
+
     @Relationship(deleteRule: .cascade, inverse: \TemplateExercise.template)
     var exercises: [TemplateExercise]
 
@@ -75,6 +80,59 @@ final class WorkoutTemplate {
         descriptor.sortBy = [SortDescriptor(\.name)]
         return (try? context.fetch(descriptor)) ?? []
     }
+
+    /// Fetches a specific template by id — used to resolve a draft's `sourceTemplateID` back to
+    /// the real template it was loaded from (see WRK-53's usage-tracking bump at Start).
+    static func template(withID id: UUID, in context: ModelContext) -> WorkoutTemplate? {
+        var descriptor = FetchDescriptor<WorkoutTemplate>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    // MARK: - Draft mutation (WRK-53)
+
+    /// Rebuilds this template's exercises from a fresh AI generation, discarding whatever was
+    /// staged before. Clears `sourceTemplateID` since this content has no real-template source.
+    func rebuildExercises(from workout: WorkoutEngine.GeneratedWorkout, context: ModelContext) {
+        // context.delete() alone doesn't retroactively clear an already-held relationship array,
+        // so remove from `exercises` explicitly first (same pattern as removeExercise(at:) in
+        // ActiveWorkoutViewModel) rather than relying on a later fetch to reflect the deletion.
+        let existing = exercises
+        exercises.removeAll()
+        for te in existing { context.delete(te) }
+
+        for (index, suggestion) in workout.exercises.enumerated() {
+            let te = TemplateExercise(
+                order: index,
+                targetSets: suggestion.targetSets,
+                targetReps: suggestion.targetReps
+            )
+            te.exercise = suggestion.exercise
+            te.targetWeight = suggestion.suggestedWeight
+            te.template = self
+            context.insert(te)
+        }
+
+        name = workout.name
+        sourceTemplateID = nil
+    }
+
+    /// Copies another template's exercises into this template's own rows — a deep copy, never a
+    /// live reference; the source template is left untouched. Sets `sourceTemplateID` so later
+    /// steps (usage tracking, save-back-to-original) can resolve where this content came from.
+    func loadExercises(from source: WorkoutTemplate, context: ModelContext) {
+        let existing = exercises
+        exercises.removeAll()
+        for te in existing { context.delete(te) }
+
+        for sourceExercise in source.exercises.sorted(by: { $0.order < $1.order }) {
+            let copy = sourceExercise.duplicated(in: context)
+            copy.template = self
+        }
+
+        name = source.name
+        sourceTemplateID = source.id
+    }
 }
 
 // MARK: - TemplateExercise
@@ -109,6 +167,31 @@ final class TemplateExercise {
         self.targetReps = targetReps
         self.restSeconds = restSeconds
         self.setTargets = []
+    }
+
+    /// Deep-copies this exercise and its `TemplateSet` children into new, inserted rows.
+    /// `.template` is left unset — callers attach the copy to whichever template (or none, for a
+    /// session's own working copy — see WRK-53) is appropriate.
+    func duplicated(in context: ModelContext) -> TemplateExercise {
+        let copy = TemplateExercise(
+            order: order,
+            targetSets: targetSets,
+            targetReps: targetReps,
+            restSeconds: restSeconds
+        )
+        copy.targetWeight = targetWeight
+        copy.targetWeightUnit = targetWeightUnit
+        copy.exercise = exercise
+        context.insert(copy)
+
+        for set in setTargets {
+            let setCopy = TemplateSet(order: set.order, targetWeight: set.targetWeight, targetReps: set.targetReps)
+            setCopy.targetWeightUnit = set.targetWeightUnit
+            setCopy.templateExercise = copy
+            context.insert(setCopy)
+        }
+
+        return copy
     }
 }
 

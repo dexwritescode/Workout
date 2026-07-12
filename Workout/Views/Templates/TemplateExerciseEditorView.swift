@@ -17,6 +17,7 @@ struct TemplateExerciseEditorView: View {
     private var userUnit: WeightUnit { allSettings.first?.unit ?? .kg }
 
     let templateExercise: TemplateExercise
+    let onSave: () -> Void
 
     struct SetRow: Identifiable, Equatable {
         let id = UUID()
@@ -43,8 +44,9 @@ struct TemplateExerciseEditorView: View {
         ]
     }
 
-    init(templateExercise: TemplateExercise) {
+    init(templateExercise: TemplateExercise, onSave: @escaping () -> Void = {}) {
         self.templateExercise = templateExercise
+        self.onSave = onSave
         _restSeconds = State(initialValue: templateExercise.restSeconds)
 
         let rows: [SetRow]
@@ -96,6 +98,7 @@ struct TemplateExerciseEditorView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         save()
+                        onSave()
                         dismiss()
                     }
                     .fontWeight(.bold)

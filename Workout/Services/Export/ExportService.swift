@@ -86,7 +86,7 @@ struct ExportService {
             
             return SessionExport(
                 id: session.id.uuidString,
-                templateName: session.template?.name,
+                templateName: session.displayName,
                 startTime: session.startTime,
                 endTime: session.endTime,
                 notes: session.notes,

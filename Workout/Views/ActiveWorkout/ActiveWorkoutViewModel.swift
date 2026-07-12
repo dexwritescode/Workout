@@ -31,9 +31,10 @@ final class ActiveWorkoutViewModel {
     let sessionName: String
     private let modelContext: ModelContext
 
-    /// Sorted template exercises — falls back to sessionExercises for generated workouts.
+    /// Sorted exercises for the active session — always the session's own copy (see
+    /// `startWorkout()`), never a live read of the template/draft's current exercises.
     var sortedExercises: [TemplateExercise] {
-        template?.exercises.sorted { $0.order < $1.order } ?? sessionExercises
+        sessionExercises
     }
 
     /// All exercises for the active session — session-local copy of template exercises
@@ -48,25 +49,26 @@ final class ActiveWorkoutViewModel {
         self.template = template
         self.sessionName = template.name
         self.modelContext = modelContext
-        self.sessionExercises = template.exercises.sorted { $0.order < $1.order }
     }
 
-    init(exercises: [TemplateExercise], name: String, modelContext: ModelContext) {
-        self.template = nil
-        self.sessionName = name
-        self.modelContext = modelContext
-        self.sessionExercises = exercises
-    }
-    
     // MARK: - Session Lifecycle
     
     /// Starts a new workout session, creating CompletedExercise entries for each template exercise
     func startWorkout() {
-        let newSession = WorkoutSession(template: template)
-        if template == nil { newSession.sessionTitle = sessionName }
+        let isDraftSession = template?.isDraft ?? false
+        let newSession = WorkoutSession(template: isDraftSession ? nil : template)
+        if isDraftSession || template == nil { newSession.sessionTitle = sessionName }
         modelContext.insert(newSession)
 
-        if template != nil { sessionExercises = sortedExercises }
+        // Deep-copy the template/draft's exercises into new, unattached rows (te.template = nil,
+        // same convention addExercise() uses below) rather than holding live references. This
+        // decouples the running session from the draft entirely — editing/regenerating/loading
+        // the draft while this workout is active can't corrupt what's being tracked here.
+        if let template {
+            sessionExercises = template.exercises
+                .sorted { $0.order < $1.order }
+                .map { $0.duplicated(in: modelContext) }
+        }
 
         for templateExercise in sessionExercises {
             let completed = CompletedExercise(order: templateExercise.order)
@@ -76,7 +78,12 @@ final class ActiveWorkoutViewModel {
             newSession.completedExercises.append(completed)
         }
 
-        template?.lastUsedDate = Date()
+        if let sourceID = template?.sourceTemplateID,
+           let source = WorkoutTemplate.template(withID: sourceID, in: modelContext) {
+            source.lastUsedDate = Date()
+            source.timesStarted += 1
+        }
+
         session = newSession
         currentExerciseIndex = 0
         state = .inProgress
@@ -134,6 +141,10 @@ final class ActiveWorkoutViewModel {
 
     /// Cancels and deletes the current workout session
     func cancelWorkout() {
+        // sessionExercises/adhocExercises are the session's own independent copies (see
+        // startWorkout()) — safe to delete regardless of outcome. The draft's own exercises are
+        // left untouched: nothing was completed, so the staged plan should still be there to retry.
+        for te in sessionExercises { modelContext.delete(te) }
         for te in adhocExercises { modelContext.delete(te) }
         adhocExercises = []
         sessionExercises = []
@@ -246,10 +257,30 @@ final class ActiveWorkoutViewModel {
         guard let session else { return }
         session.isCompleted = true
         RecoveryEngine.updateRecoveryStates(for: session, modelContext: modelContext)
+
+        // sessionExercises/adhocExercises are independent copies with no further purpose now
+        // that CompletedExercise/ExerciseSet hold the real, saved record.
+        for te in sessionExercises { modelContext.delete(te) }
+        for te in adhocExercises { modelContext.delete(te) }
+        sessionExercises = []
+        adhocExercises = []
+
+        // The draft's own exercises are cleared only on an actual completion, so the next time
+        // the staging view appears it starts from a clean slate rather than an already-used plan.
+        if let template, template.isDraft {
+            let existing = template.exercises
+            template.exercises.removeAll()
+            for te in existing { modelContext.delete(te) }
+            template.sourceTemplateID = nil
+        }
     }
-    
+
     /// Discards the workout by deleting the session
     func discardWorkout() {
+        // Same reasoning as cancelWorkout(): these are independent copies, safe to delete
+        // regardless of outcome, but the draft's own exercises are left untouched since nothing
+        // was actually completed.
+        for te in sessionExercises { modelContext.delete(te) }
         for te in adhocExercises { modelContext.delete(te) }
         adhocExercises = []
         sessionExercises = []

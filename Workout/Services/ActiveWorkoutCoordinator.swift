@@ -29,19 +29,6 @@ final class ActiveWorkoutCoordinator {
         isPresented = true
     }
 
-    func startGenerated(workout: WorkoutEngine.GeneratedWorkout, modelContext: ModelContext) {
-        let exercises = workout.exercises.enumerated().map { index, suggestion -> TemplateExercise in
-            let te = TemplateExercise(order: index, targetSets: suggestion.targetSets, targetReps: suggestion.targetReps)
-            te.exercise = suggestion.exercise
-            te.targetWeight = suggestion.suggestedWeight
-            return te
-        }
-        let vm = ActiveWorkoutViewModel(exercises: exercises, name: workout.name, modelContext: modelContext)
-        vm.startWorkout()
-        viewModel = vm
-        isPresented = true
-    }
-
     func minimize() {
         isPresented = false
     }

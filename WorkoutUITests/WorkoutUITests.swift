@@ -89,4 +89,27 @@ final class WorkoutUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "Expected a generated workout preview")
         XCTAssertFalse(app.buttons["Start Workout"].exists, "Start Workout button should be hidden in Smart Workout while a workout is active")
     }
+
+    @MainActor
+    func testWRK53_regenerateSkipsConfirmWhenUntouchedButConfirmsAfterEdit() throws {
+        let app = XCUIApplication()
+
+        app.staticTexts["Smart Workout"].tap()
+
+        // An untouched AI suggestion generates automatically.
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "Expected a generated workout preview")
+
+        // Untouched: regenerating again should not prompt for confirmation.
+        app.buttons["Regenerate"].tap()
+        XCTAssertFalse(app.alerts["Regenerate workout?"].waitForExistence(timeout: 2), "Should not confirm when nothing has been edited yet")
+
+        // Edit the draft (add an exercise) to make it dirty.
+        app.buttons["Add Exercise"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        // Dirty: regenerating now should prompt for confirmation.
+        app.buttons["Regenerate"].tap()
+        XCTAssertTrue(app.alerts["Regenerate workout?"].waitForExistence(timeout: 5), "Should confirm before discarding an edited draft")
+    }
 }

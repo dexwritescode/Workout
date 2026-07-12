@@ -434,10 +434,277 @@ struct WorkoutTemplateTests {
         #expect(nonDraftTemplates.first?.name == "Push Day A")
     }
 
+    @Test("template(withID:in:) resolves a specific template by id")
+    func templateWithIDResolves() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let template = WorkoutTemplate(name: "Push Day A")
+        context.insert(template)
+
+        let resolved = WorkoutTemplate.template(withID: template.id, in: context)
+        #expect(resolved?.id == template.id)
+
+        let missing = WorkoutTemplate.template(withID: UUID(), in: context)
+        #expect(missing == nil)
+    }
+
+    @Test("rebuildExercises(from:) replaces existing rows and clears sourceTemplateID")
+    func rebuildExercisesReplacesRowsAndClearsSource() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.loadExercises(from: source, context: context) // give it a sourceTemplateID to clear
+
+        let exercise = makeExercise(name: "Bench Press")
+        context.insert(exercise)
+        let workout = WorkoutEngine.GeneratedWorkout(
+            name: "Push Day",
+            exercises: [
+                WorkoutEngine.SuggestedExercise(
+                    exercise: exercise,
+                    targetSets: 4,
+                    targetReps: 8,
+                    suggestedWeight: 60,
+                    reason: "chest — compound"
+                )
+            ],
+            targetMuscles: [.chest],
+            estimatedDuration: 30
+        )
+
+        draft.rebuildExercises(from: workout, context: context)
+
+        #expect(draft.name == "Push Day")
+        #expect(draft.sourceTemplateID == nil)
+        #expect(draft.exercises.count == 1)
+        #expect(draft.exercises.first?.exercise?.name == "Bench Press")
+        #expect(draft.exercises.first?.targetSets == 4)
+    }
+
+    @Test("loadExercises(from:) deep-copies without mutating the source template")
+    func loadExercisesDeepCopiesSource() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        let exercise = makeExercise(name: "Bench Press")
+        context.insert(exercise)
+        let sourceTE = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        sourceTE.exercise = exercise
+        sourceTE.template = source
+        context.insert(sourceTE)
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.loadExercises(from: source, context: context)
+
+        #expect(draft.name == "Push Day A")
+        #expect(draft.sourceTemplateID == source.id)
+        #expect(draft.exercises.count == 1)
+        #expect(draft.exercises.first?.id != sourceTE.id, "Should be a distinct copy, not the same row")
+        #expect(source.exercises.count == 1, "Source template's own exercises must be untouched")
+        #expect(source.exercises.first?.id == sourceTE.id)
+    }
+
     /// Returns a fresh in-memory container. Callers MUST hold the returned container for the
     /// duration of the test — `ModelContext` does not keep its `ModelContainer` alive, and a
     /// predicate fetch against a deallocated container's schema traps in
     /// `Schema.KeyPathCache.validateAndCache` (EXC_BREAKPOINT).
+    @MainActor
+    private static func makeContainer() throws -> ModelContainer {
+        let schema = Schema(SchemaV1.models)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [config])
+    }
+}
+
+// MARK: - ActiveWorkoutViewModel Tests
+
+@Suite("ActiveWorkoutViewModel Tests")
+@MainActor
+struct ActiveWorkoutViewModelTests {
+
+    @Test("startWorkout copies the template's exercises rather than referencing them live")
+    func startWorkoutCopiesExercises() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        let exercise = makeExercise(name: "Bench Press")
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+
+        #expect(vm.sessionExercises.count == 1)
+        #expect(vm.sessionExercises.first?.id != te.id, "Session should hold an independent copy, not the draft's own row")
+        #expect(draft.exercises.count == 1, "The draft's own row should be untouched by starting")
+    }
+
+    @Test("startWorkout from a draft nils session.template and snapshots the title")
+    func startWorkoutFromDraftSetsIdentity() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.name = "Push Day"
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+
+        #expect(vm.session?.template == nil)
+        #expect(vm.session?.sessionTitle == "Push Day")
+    }
+
+    @Test("startWorkout from a real (non-draft) template keeps the live FK")
+    func startWorkoutFromRealTemplateKeepsFK() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let template = WorkoutTemplate(name: "Push Day A")
+        context.insert(template)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = template
+        context.insert(te)
+
+        let vm = ActiveWorkoutViewModel(template: template, modelContext: context)
+        vm.startWorkout()
+
+        #expect(vm.session?.template?.id == template.id)
+    }
+
+    @Test("saveWorkout clears the draft's own exercises and sourceTemplateID")
+    func saveWorkoutClearsDraft() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let sourceTE = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        sourceTE.exercise = exercise
+        sourceTE.template = source
+        context.insert(sourceTE)
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.loadExercises(from: source, context: context)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+        vm.saveWorkout()
+
+        #expect(draft.exercises.isEmpty)
+        #expect(draft.sourceTemplateID == nil)
+        #expect(vm.sessionExercises.isEmpty)
+        #expect(source.exercises.count == 1, "The real source template must be untouched")
+    }
+
+    @Test("saveWorkout bumps the source template's lastUsedDate and timesStarted")
+    func saveWorkoutBumpsUsageStats() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        #expect(source.timesStarted == 0)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let sourceTE = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        sourceTE.exercise = exercise
+        sourceTE.template = source
+        context.insert(sourceTE)
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.loadExercises(from: source, context: context)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+
+        #expect(source.timesStarted == 1)
+        #expect(source.lastUsedDate != nil)
+    }
+
+    @Test("starting from a fresh AI-generated draft does not bump any template's usage stats")
+    func startWorkoutWithoutSourceDoesNotBumpUsage() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+        // sourceTemplateID stays nil — simulates an AI-generated draft never loaded from a template
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+
+        #expect(draft.sourceTemplateID == nil)
+    }
+
+    @Test("cancelWorkout deletes session copies but leaves the draft's own exercises intact")
+    func cancelWorkoutLeavesDraftIntact() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+        vm.cancelWorkout()
+
+        #expect(vm.sessionExercises.isEmpty)
+        #expect(draft.exercises.count == 1, "Cancelling shouldn't touch the draft's own staged plan")
+    }
+
+    @Test("discardWorkout deletes session copies but leaves the draft's own exercises intact")
+    func discardWorkoutLeavesDraftIntact() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+        vm.finishWorkout()
+        vm.discardWorkout()
+
+        #expect(vm.sessionExercises.isEmpty)
+        #expect(draft.exercises.count == 1)
+    }
+
     @MainActor
     private static func makeContainer() throws -> ModelContainer {
         let schema = Schema(SchemaV1.models)

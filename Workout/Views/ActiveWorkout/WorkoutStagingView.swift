@@ -1,0 +1,414 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+//  WorkoutStagingView.swift
+//  Workout
+//
+//  Unified workout-starting flow (WRK-51/53): generate, load a template, edit freely, start —
+//  all against the single draft WorkoutTemplate (WRK-52). Replaces the old split between
+//  SmartWorkoutView and TemplateDetailView.
+//
+
+import SwiftUI
+import SwiftData
+
+struct WorkoutStagingView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(ActiveWorkoutCoordinator.self) private var coordinator
+
+    @Query private var recoveryStates: [MuscleRecoveryState]
+    @Query(sort: \Exercise.name) private var allExercises: [Exercise]
+    @Query(
+        filter: #Predicate<WorkoutSession> { $0.isCompleted },
+        sort: \WorkoutSession.startTime,
+        order: .reverse
+    ) private var recentSessions: [WorkoutSession]
+    @Query private var settings: [UserSettings]
+
+    @State private var draft: WorkoutTemplate?
+    @State private var isDirty = false
+    @State private var selectedSplit: SplitType = .pushPullLegs
+    @State private var showLoadTemplate = false
+    @State private var showManageTemplates = false
+    @State private var showAddExercise = false
+    @State private var exerciseToEdit: TemplateExercise?
+    @State private var showRegenerateConfirm = false
+
+    private var currentSplit: SplitType {
+        settings.first?.splitType ?? .pushPullLegs
+    }
+
+    private var sortedExercises: [TemplateExercise] {
+        draft?.exercises.sorted { $0.order < $1.order } ?? []
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 20) {
+                    splitPicker
+                        .padding(.horizontal, 16)
+
+                    if sortedExercises.isEmpty {
+                        generatePrompt
+                            .padding(.horizontal, 16)
+                            .transition(.opacity)
+                    } else {
+                        workoutPreview
+                            .padding(.horizontal, 16)
+                            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                    }
+                }
+                .padding(.top, 16)
+            }
+            .background(AppStyle.Colors.background)
+
+            if !sortedExercises.isEmpty && !coordinator.isActive {
+                Button {
+                    startWorkout()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 15))
+                        Text("Start Workout")
+                    }
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+        }
+        .background(AppStyle.Colors.background)
+        .navigationTitle("Workout")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showManageTemplates = true
+                } label: {
+                    Image(systemName: "list.bullet.rectangle")
+                }
+            }
+        }
+        .onAppear {
+            selectedSplit = currentSplit
+            let draft = WorkoutTemplate.draft(in: modelContext)
+            self.draft = draft
+            refreshIfNeeded(draft)
+        }
+        .onChange(of: coordinator.isActive) { _, isActive in
+            // This view never leaves the hierarchy while a workout is active (it's just covered
+            // full-screen or minimized to the mini-bar), so onAppear alone won't refire once the
+            // workout ends — e.g. saveWorkout() clearing the draft back to empty. Re-run the same
+            // on-appear logic whenever a workout finishes, is cancelled, or is discarded.
+            if !isActive, let draft {
+                refreshIfNeeded(draft)
+            }
+        }
+        .sheet(isPresented: $showManageTemplates) {
+            TemplatePickerView()
+        }
+        .sheet(isPresented: $showLoadTemplate) {
+            TemplatePickerView { template in
+                draft?.loadExercises(from: template, context: modelContext)
+                isDirty = false
+            }
+        }
+        .sheet(isPresented: $showAddExercise) {
+            ExercisePickerView { exercise in
+                addExercise(exercise)
+            }
+        }
+        .sheet(item: $exerciseToEdit) { te in
+            TemplateExerciseEditorView(templateExercise: te, onSave: { isDirty = true })
+        }
+        .alert("Regenerate workout?", isPresented: $showRegenerateConfirm) {
+            Button("Regenerate", role: .destructive) { generateAndRebuild() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This discards the current plan.")
+        }
+    }
+
+    // MARK: - Split Picker
+
+    private var splitPicker: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Training Split")
+                .sectionHeader()
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(SplitType.allCases) { split in
+                        Button {
+                            selectedSplit = split
+                            regenerateTapped()
+                        } label: {
+                            Text(split.rawValue)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(selectedSplit == split ? AppStyle.Colors.brand : AppStyle.Colors.textSecondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedSplit == split ? AppStyle.Colors.brand.opacity(0.12) : AppStyle.Colors.surface2)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule()
+                                        .stroke(selectedSplit == split ? AppStyle.Colors.brand : AppStyle.Colors.borderStrong, lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Generate Prompt
+
+    private var generatePrompt: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "sparkles")
+                .font(.system(size: AppStyle.IconSize.hero))
+                .foregroundStyle(AppStyle.Colors.textTertiary)
+
+            Text("Tap Generate to create a workout\nbased on your recovery status.")
+                .font(.system(size: 15))
+                .foregroundStyle(AppStyle.Colors.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                generateAndRebuild()
+            } label: {
+                Label("Generate Workout", systemImage: "sparkles")
+            }
+            .buttonStyle(PrimaryActionButtonStyle())
+
+            Button {
+                showLoadTemplate = true
+            } label: {
+                Text("Load Template Instead")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(.vertical, 32)
+    }
+
+    // MARK: - Workout Preview
+
+    private var targetMuscles: [MuscleGroup] {
+        var seen = Set<MuscleGroup>()
+        var result: [MuscleGroup] = []
+        for te in sortedExercises {
+            for muscle in te.exercise?.primaryMuscleGroups ?? [] where !seen.contains(muscle) {
+                seen.insert(muscle)
+                result.append(muscle)
+            }
+        }
+        return result
+    }
+
+    private var estimatedMinutes: Int {
+        let totalSets = sortedExercises.reduce(0) { $0 + $1.targetSets }
+        return max(20, totalSets * 2 + sortedExercises.count * 2)
+    }
+
+    private var workoutPreview: some View {
+        VStack(spacing: 16) {
+            headerCard
+
+            VStack(spacing: 6) {
+                ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, te in
+                    exerciseRow(te, index: index)
+                }
+            }
+
+            Button {
+                showAddExercise = true
+            } label: {
+                Label("Add Exercise", systemImage: "plus.circle.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppStyle.Colors.brand)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 10) {
+                Button {
+                    showLoadTemplate = true
+                } label: {
+                    Text("Load Template")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+
+                Button {
+                    regenerateTapped()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                        Text("Regenerate")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+    }
+
+    private var headerCard: some View {
+        VStack(spacing: 6) {
+            Text(draft?.name ?? "Workout")
+                .font(.system(size: 22, weight: .heavy))
+                .foregroundStyle(AppStyle.Colors.text)
+
+            HStack(spacing: 16) {
+                Label("\(sortedExercises.count) exercises", systemImage: "square.grid.2x2")
+                Label("~\(estimatedMinutes) min", systemImage: "clock")
+            }
+            .font(.system(size: 14))
+            .foregroundStyle(AppStyle.Colors.textSecondary)
+
+            HStack(spacing: 6) {
+                ForEach(targetMuscles) { muscle in
+                    Text(muscle.rawValue)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(AppStyle.Colors.brand)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 3)
+                        .background(AppStyle.Colors.brand.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(16)
+        .background(AppStyle.Colors.surface1)
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppStyle.Radius.card)
+                .stroke(AppStyle.Colors.border, lineWidth: 1)
+        )
+    }
+
+    private func exerciseRow(_ te: TemplateExercise, index: Int) -> some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(AppStyle.Colors.brand.opacity(0.1))
+                .frame(width: 28, height: 28)
+                .overlay(
+                    Text("\(index + 1)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(AppStyle.Colors.brand)
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(te.exercise?.name ?? "Unknown")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppStyle.Colors.text)
+                Text("\(te.targetSets) sets × \(te.targetReps) reps · \(te.exercise?.primaryMusclesDisplayString ?? "")")
+                    .font(.system(size: 13))
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+            }
+
+            Spacer()
+
+            Button {
+                exerciseToEdit = te
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AppStyle.Colors.textTertiary)
+                    .frame(width: 32, height: 32)
+                    .background(AppStyle.Colors.surface2)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                deleteExercise(te)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppStyle.Colors.error)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppStyle.Colors.surface1)
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
+                .stroke(AppStyle.Colors.border, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Actions
+
+    /// Populates the draft on first-ever appear, or refreshes an untouched AI suggestion against
+    /// live recovery — never touches a template-sourced or user-edited draft (see WRK-51/53).
+    private func refreshIfNeeded(_ draft: WorkoutTemplate) {
+        if draft.exercises.isEmpty {
+            generateAndRebuild()
+        } else if draft.sourceTemplateID == nil && !isDirty {
+            generateAndRebuild()
+        }
+    }
+
+    private func generateAndRebuild() {
+        guard let draft else { return }
+        let workout = WorkoutEngine.generateWorkout(
+            splitType: selectedSplit,
+            recoveryStates: recoveryStates,
+            allExercises: allExercises,
+            recentSessions: Array(recentSessions.prefix(10))
+        )
+        withAnimation(.easeInOut(duration: 0.3)) {
+            draft.rebuildExercises(from: workout, context: modelContext)
+            isDirty = false
+        }
+    }
+
+    /// Regenerate is always available; only confirms when discarding something other than a
+    /// fresh, untouched generation.
+    private func regenerateTapped() {
+        if isDirty {
+            showRegenerateConfirm = true
+        } else {
+            generateAndRebuild()
+        }
+    }
+
+    private func addExercise(_ exercise: Exercise) {
+        guard let draft else { return }
+        let te = TemplateExercise(order: draft.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 90)
+        te.exercise = exercise
+        te.template = draft
+        modelContext.insert(te)
+        isDirty = true
+    }
+
+    private func deleteExercise(_ te: TemplateExercise) {
+        modelContext.delete(te)
+        isDirty = true
+    }
+
+    private func startWorkout() {
+        guard let draft else { return }
+        coordinator.start(template: draft, modelContext: modelContext)
+    }
+}
+
+#Preview {
+    NavigationStack {
+        WorkoutStagingView()
+    }
+    .environment(ActiveWorkoutCoordinator())
+    .modelContainer(for: [
+        MuscleRecoveryState.self,
+        Exercise.self,
+        WorkoutSession.self,
+        UserSettings.self,
+        WorkoutTemplate.self
+    ], inMemory: true)
+}

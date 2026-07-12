@@ -22,16 +22,14 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
-    func testWRK38_saveShowsConfirmationThenAutoReturnsToStagingView() throws {
-        // setUpWithError already launched the app; relaunch with a longer confirmation
-        // delay so this test can reliably observe the screen despite XCUITest's
-        // ~1s accessibility-snapshot polling interval (the app itself always uses 1s).
+    func testSaveShowsConfirmationThenAutoReturnsToStagingView() throws {
+        // Relaunch with a longer confirmation delay so this test can reliably observe the
+        // screen despite XCUITest's ~1s accessibility-snapshot polling interval.
         let app = XCUIApplication()
         app.terminate()
         app.launchEnvironment["UITEST_SAVE_CONFIRMATION_DELAY"] = "3"
         app.launch()
 
-        // Workout tab is the unified staging view — no template detour needed to start.
         XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
         app.buttons["Start Workout"].tap()
 
@@ -47,19 +45,15 @@ final class WorkoutUITests: XCTestCase {
         XCTAssertTrue(confirmation.waitForExistence(timeout: 5), "Expected the checkmark confirmation screen right after saving")
         XCTAssertFalse(app.buttons["Save Workout"].exists, "Summary screen should be popped, not stacked under the confirmation")
 
-        // The confirmation screen should auto-dismiss ~1s later, landing back on the staging view.
         let startWorkoutButton = app.buttons["Start Workout"]
         XCTAssertTrue(startWorkoutButton.waitForExistence(timeout: 4), "Expected to auto-return to the unified staging view")
         XCTAssertFalse(confirmation.exists, "Confirmation screen should be gone after auto-dismiss")
     }
 
     @MainActor
-    func testWRK25_startWorkoutButtonHiddenInSmartWorkoutWhileWorkoutActive() throws {
+    func testStartWorkoutButtonHiddenWhileWorkoutActive() throws {
         let app = XCUIApplication()
 
-        // Workout tab is the unified staging view now — the same "hide Start while active"
-        // logic that used to be duplicated across TemplateDetailView and SmartWorkoutView
-        // (WRK-25) now lives in exactly one place.
         XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected Start Workout button before any workout is active")
         app.buttons["Start Workout"].tap()
 
@@ -73,23 +67,51 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
-    func testWRK53_regenerateSkipsConfirmWhenUntouchedButConfirmsAfterEdit() throws {
+    func testRegenerateSkipsConfirmWhenUntouchedButConfirmsAfterEdit() throws {
         let app = XCUIApplication()
 
-        // Workout tab is the unified staging view — an untouched AI suggestion generates automatically.
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5), "Expected a generated workout preview")
 
-        // Untouched: regenerating again should not prompt for confirmation.
         app.buttons["Regenerate"].tap()
         XCTAssertFalse(app.alerts["Regenerate workout?"].waitForExistence(timeout: 2), "Should not confirm when nothing has been edited yet")
 
-        // Edit the draft (add an exercise) to make it dirty.
         app.buttons["Add Exercise"].tap()
         XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
         app.staticTexts["Barbell Bench Press"].tap()
 
-        // Dirty: regenerating now should prompt for confirmation.
         app.buttons["Regenerate"].tap()
         XCTAssertTrue(app.alerts["Regenerate workout?"].waitForExistence(timeout: 5), "Should confirm before discarding an edited draft")
+    }
+
+    @MainActor
+    func testSelectedSplitPersistsAcrossTabSwitches() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Upper/Lower"].waitForExistence(timeout: 5))
+        app.buttons["Upper/Lower"].tap()
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Upper/Lower"].isSelected, "Upper/Lower should be selected right after tapping it")
+
+        app.buttons["Recovery"].tap()
+        app.buttons["Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Upper/Lower"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Upper/Lower"].isSelected, "Upper/Lower should still be selected after switching tabs and back")
+    }
+
+    @MainActor
+    func testLoadingATemplateHidesSplitPickerAndConfirmsBeforeRegenerate() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5))
+
+        app.buttons["Load Template"].tap()
+        XCTAssertTrue(app.staticTexts["Push Day A"].waitForExistence(timeout: 5))
+        app.staticTexts["Push Day A"].tap()
+
+        XCTAssertFalse(app.staticTexts["TRAINING SPLIT"].exists, "Split picker should be hidden once a template is loaded")
+
+        app.buttons["Regenerate"].tap()
+        XCTAssertTrue(app.alerts["Regenerate workout?"].waitForExistence(timeout: 5), "Should confirm before discarding a freshly-loaded template")
     }
 }

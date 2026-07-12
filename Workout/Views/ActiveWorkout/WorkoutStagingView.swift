@@ -3,9 +3,8 @@
 //  WorkoutStagingView.swift
 //  Workout
 //
-//  Unified workout-starting flow (WRK-51/53): generate, load a template, edit freely, start —
-//  all against the single draft WorkoutTemplate (WRK-52). Replaces the old split between
-//  SmartWorkoutView and TemplateDetailView.
+//  Unified workout-starting flow: generate, load a template, edit freely, start — all against
+//  the single draft WorkoutTemplate.
 //
 
 import SwiftUI
@@ -45,8 +44,10 @@ struct WorkoutStagingView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    splitPicker
-                        .padding(.horizontal, 16)
+                    if draft?.sourceTemplateID == nil {
+                        splitPicker
+                            .padding(.horizontal, 16)
+                    }
 
                     if sortedExercises.isEmpty {
                         generatePrompt
@@ -90,7 +91,12 @@ struct WorkoutStagingView: View {
             }
         }
         .onAppear {
-            selectedSplit = currentSplit
+            // Only seed from the saved default on the very first appear — onAppear refires on
+            // every tab reselect now that this view is the tab root, and unconditionally
+            // resetting here would silently discard whatever split the user picked this session.
+            if self.draft == nil {
+                selectedSplit = currentSplit
+            }
             let draft = WorkoutTemplate.draft(in: modelContext)
             self.draft = draft
             refreshIfNeeded(draft)
@@ -155,6 +161,7 @@ struct WorkoutStagingView: View {
                                         .stroke(selectedSplit == split ? AppStyle.Colors.brand : AppStyle.Colors.borderStrong, lineWidth: 1)
                                 )
                         }
+                        .accessibilityAddTraits(selectedSplit == split ? [.isSelected] : [])
                     }
                 }
             }
@@ -346,7 +353,7 @@ struct WorkoutStagingView: View {
     // MARK: - Actions
 
     /// Populates the draft on first-ever appear, or refreshes an untouched AI suggestion against
-    /// live recovery — never touches a template-sourced or user-edited draft (see WRK-51/53).
+    /// live recovery — never touches a template-sourced or user-edited draft.
     private func refreshIfNeeded(_ draft: WorkoutTemplate) {
         if draft.exercises.isEmpty {
             generateAndRebuild()
@@ -370,9 +377,10 @@ struct WorkoutStagingView: View {
     }
 
     /// Regenerate is always available; only confirms when discarding something other than a
-    /// fresh, untouched generation.
+    /// fresh, untouched generation — that includes a loaded template, even though loading one
+    /// doesn't itself mark the draft dirty.
     private func regenerateTapped() {
-        if isDirty {
+        if isDirty || draft?.sourceTemplateID != nil {
             showRegenerateConfirm = true
         } else {
             generateAndRebuild()

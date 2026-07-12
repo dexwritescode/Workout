@@ -24,7 +24,7 @@ final class WorkoutTemplate {
     var lastUsedDate: Date?
 
     /// The real template this draft's exercises were last loaded from, if any (nil after a fresh
-    /// AI generation). Meaningful only when `isDraft == true` — see WRK-53.
+    /// AI generation). Meaningful only when `isDraft == true`.
     var sourceTemplateID: UUID? = nil
     var timesStarted: Int = 0
 
@@ -52,7 +52,7 @@ final class WorkoutTemplate {
     // MARK: - Draft (Smart Workout staging area)
 
     /// Returns the single scratch template used to stage a Smart Workout draft before it's
-    /// started (see WRK-51/WRK-52). Created lazily on first use, never seeded at launch.
+    /// started. Created lazily on first use, never seeded at launch.
     /// `isDraft` is set on the object before it is ever inserted/saved, so there is no
     /// persisted state where a draft row exists with `isDraft == false`.
     static func draft(in context: ModelContext) -> WorkoutTemplate {
@@ -82,14 +82,14 @@ final class WorkoutTemplate {
     }
 
     /// Fetches a specific template by id — used to resolve a draft's `sourceTemplateID` back to
-    /// the real template it was loaded from (see WRK-53's usage-tracking bump at Start).
+    /// the real template it was loaded from.
     static func template(withID id: UUID, in context: ModelContext) -> WorkoutTemplate? {
         var descriptor = FetchDescriptor<WorkoutTemplate>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
         return try? context.fetch(descriptor).first
     }
 
-    // MARK: - Draft mutation (WRK-53)
+    // MARK: - Draft mutation
 
     /// Rebuilds this template's exercises from a fresh AI generation, discarding whatever was
     /// staged before. Clears `sourceTemplateID` since this content has no real-template source.
@@ -171,7 +171,7 @@ final class TemplateExercise {
 
     /// Deep-copies this exercise and its `TemplateSet` children into new, inserted rows.
     /// `.template` is left unset — callers attach the copy to whichever template (or none, for a
-    /// session's own working copy — see WRK-53) is appropriate.
+    /// session's own working copy) is appropriate.
     func duplicated(in context: ModelContext) -> TemplateExercise {
         let copy = TemplateExercise(
             order: order,

@@ -21,6 +21,11 @@ final class UserSettings {
     var preferredSplitType: String?     // SplitType raw value
     var createdDate: Date
 
+    var workoutStartModeRaw: String = WorkoutStartMode.smart.rawValue
+    /// Constrained to `.smart`/`.freeform` only (never `.dayTemplate`, to avoid recursion when
+    /// `.dayTemplate` has no assignment for today).
+    var dayTemplateFallbackModeRaw: String = WorkoutStartMode.smart.rawValue
+
     // Plate calculator
     var availablePlatesKg: [Double]
     var availablePlatesLbs: [Double]
@@ -55,5 +60,15 @@ final class UserSettings {
             return SplitType(rawValue: raw)
         }
         set { preferredSplitType = newValue?.rawValue }
+    }
+
+    var workoutStartMode: WorkoutStartMode {
+        get { WorkoutStartMode(rawValue: workoutStartModeRaw) ?? .smart }
+        set { workoutStartModeRaw = newValue.rawValue }
+    }
+
+    var dayTemplateFallbackMode: WorkoutStartMode {
+        get { WorkoutStartMode(rawValue: dayTemplateFallbackModeRaw) ?? .smart }
+        set { dayTemplateFallbackModeRaw = (newValue == .dayTemplate ? .smart : newValue).rawValue }
     }
 }

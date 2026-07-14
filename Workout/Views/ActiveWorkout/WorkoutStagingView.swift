@@ -22,6 +22,7 @@ struct WorkoutStagingView: View {
         order: .reverse
     ) private var recentSessions: [WorkoutSession]
     @Query private var settings: [UserSettings]
+    @Query private var dayAssignments: [DayTemplateAssignment]
 
     @State private var draft: WorkoutTemplate?
     @State private var isDirty = false
@@ -36,6 +37,15 @@ struct WorkoutStagingView: View {
         settings.first?.splitType ?? .pushPullLegs
     }
 
+    private var currentMode: WorkoutStartMode {
+        settings.first?.workoutStartMode ?? .smart
+    }
+
+    private var todaysAssignment: DayTemplateAssignment? {
+        let today = Weekday.today.rawValue
+        return dayAssignments.first { $0.weekday == today }
+    }
+
     private var sortedExercises: [TemplateExercise] {
         draft?.exercises.sorted { $0.order < $1.order } ?? []
     }
@@ -44,7 +54,7 @@ struct WorkoutStagingView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 20) {
-                    if draft?.sourceTemplateID == nil {
+                    if currentMode == .smart && draft?.sourceTemplateID == nil {
                         splitPicker
                             .padding(.horizontal, 16)
                     }
@@ -82,6 +92,13 @@ struct WorkoutStagingView: View {
         .navigationTitle("Workout")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink {
+                    WorkoutSettingsView()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showManageTemplates = true
@@ -170,28 +187,41 @@ struct WorkoutStagingView: View {
 
     // MARK: - Generate Prompt
 
+    private var emptyStateMessage: String {
+        switch currentMode {
+        case .smart:
+            return "Tap Generate to create a workout\nbased on your recovery status."
+        case .dayTemplate:
+            return "No template scheduled for today.\nLoad one to get started."
+        case .freeform:
+            return "Load a template to get started."
+        }
+    }
+
     private var generatePrompt: some View {
         VStack(spacing: 16) {
-            Image(systemName: "sparkles")
+            Image(systemName: currentMode == .smart ? "sparkles" : "calendar")
                 .font(.system(size: AppStyle.IconSize.hero))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
 
-            Text("Tap Generate to create a workout\nbased on your recovery status.")
+            Text(emptyStateMessage)
                 .font(.system(size: 15))
                 .foregroundStyle(AppStyle.Colors.textSecondary)
                 .multilineTextAlignment(.center)
 
-            Button {
-                generateAndRebuild()
-            } label: {
-                Label("Generate Workout", systemImage: "sparkles")
+            if currentMode == .smart {
+                Button {
+                    generateAndRebuild()
+                } label: {
+                    Label("Generate Workout", systemImage: "sparkles")
+                }
+                .buttonStyle(PrimaryActionButtonStyle())
             }
-            .buttonStyle(PrimaryActionButtonStyle())
 
             Button {
                 showLoadTemplate = true
             } label: {
-                Text("Load Template Instead")
+                Text(currentMode == .smart ? "Load Template Instead" : "Load Template")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(SecondaryButtonStyle())
@@ -246,17 +276,19 @@ struct WorkoutStagingView: View {
                 }
                 .buttonStyle(SecondaryButtonStyle())
 
-                Button {
-                    regenerateTapped()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14))
-                        Text("Regenerate")
+                if currentMode == .smart {
+                    Button {
+                        regenerateTapped()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 14))
+                            Text("Regenerate")
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(SecondaryButtonStyle())
                 }
-                .buttonStyle(SecondaryButtonStyle())
             }
         }
     }
@@ -352,13 +384,42 @@ struct WorkoutStagingView: View {
 
     // MARK: - Actions
 
-    /// Populates the draft on first-ever appear, or refreshes an untouched AI suggestion against
-    /// live recovery — never touches a template-sourced or user-edited draft.
+    /// Populates the draft on appear, branching on the user's chosen start mode.
     private func refreshIfNeeded(_ draft: WorkoutTemplate) {
-        if draft.exercises.isEmpty {
-            generateAndRebuild()
-        } else if draft.sourceTemplateID == nil && !isDirty {
-            generateAndRebuild()
+        switch currentMode {
+        case .smart:
+            // Refreshes an untouched AI suggestion against live recovery — never touches a
+            // template-sourced or user-edited draft.
+            if draft.exercises.isEmpty {
+                generateAndRebuild()
+            } else if draft.sourceTemplateID == nil && !isDirty {
+                generateAndRebuild()
+            }
+
+        case .dayTemplate:
+            let today = Weekday.today.rawValue
+            if let assigned = todaysAssignment?.template {
+                if draft.autoLoadedForWeekday != today {
+                    // A stale prior-day auto-load, or an empty draft, is safe to replace. If
+                    // autoLoadedForWeekday is nil and the draft is non-empty, it's the user's
+                    // manual override — leave it alone rather than clobbering it.
+                    if draft.autoLoadedForWeekday != nil || draft.exercises.isEmpty {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            draft.loadExercises(from: assigned, context: modelContext)
+                            draft.autoLoadedForWeekday = today
+                            isDirty = false
+                        }
+                    }
+                }
+            } else if draft.autoLoadedForWeekday != nil, settings.first?.dayTemplateFallbackMode == .smart {
+                // No assignment for today and a stale auto-loaded remnant is sitting in the
+                // draft — the fallback says regenerate.
+                generateAndRebuild()
+            }
+            // .freeform fallback, or a manual override/already-empty draft → always leave alone.
+
+        case .freeform:
+            break // No automation, regardless of draft state.
         }
     }
 
@@ -417,6 +478,7 @@ struct WorkoutStagingView: View {
         Exercise.self,
         WorkoutSession.self,
         UserSettings.self,
-        WorkoutTemplate.self
+        WorkoutTemplate.self,
+        DayTemplateAssignment.self
     ], inMemory: true)
 }

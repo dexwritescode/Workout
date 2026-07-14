@@ -41,6 +41,9 @@ final class WorkoutTemplate {
     @Relationship(deleteRule: .nullify, inverse: \WorkoutSession.template)
     var sessions: [WorkoutSession]?
 
+    @Relationship(deleteRule: .nullify, inverse: \DayTemplateAssignment.template)
+    var dayAssignments: [DayTemplateAssignment]?
+
     init(
         id: UUID = UUID(),
         name: String,

@@ -118,6 +118,26 @@ struct EnumTests {
         #expect(lowerMuscles.contains(.quadriceps))
         #expect(lowerMuscles.contains(.calves))
     }
+
+    @Test("WorkoutStartMode has 3 cases")
+    func workoutStartModeCount() async throws {
+        #expect(WorkoutStartMode.allCases.count == 3)
+    }
+
+    @Test("Weekday has 7 cases matching Calendar.Component.weekday raw values")
+    func weekdayCount() async throws {
+        #expect(Weekday.allCases.count == 7)
+        #expect(Weekday.sunday.rawValue == 1)
+        #expect(Weekday.saturday.rawValue == 7)
+    }
+
+    @Test("Weekday.displayOrder is Monday-first and contains every case exactly once")
+    func weekdayDisplayOrderIsMondayFirst() async throws {
+        #expect(Weekday.displayOrder.first == .monday)
+        #expect(Weekday.displayOrder.last == .sunday)
+        #expect(Set(Weekday.displayOrder) == Set(Weekday.allCases))
+        #expect(Weekday.displayOrder.count == 7)
+    }
 }
 
 @Suite("PR #2: Exercise Model Tests")
@@ -510,10 +530,90 @@ struct WorkoutTemplateTests {
         #expect(source.exercises.first?.id == sourceTE.id)
     }
 
+    @Test("rebuildExercises(from:) clears autoLoadedForWeekday, marking the draft user-owned")
+    func rebuildExercisesClearsAutoLoadedForWeekday() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.autoLoadedForWeekday = Weekday.monday.rawValue
+
+        let workout = WorkoutEngine.GeneratedWorkout(
+            name: "Push Day",
+            exercises: [],
+            targetMuscles: [],
+            estimatedDuration: 30
+        )
+        draft.rebuildExercises(from: workout, context: context)
+
+        #expect(draft.autoLoadedForWeekday == nil)
+    }
+
+    @Test("loadExercises(from:) clears autoLoadedForWeekday, marking the draft user-owned")
+    func loadExercisesClearsAutoLoadedForWeekday() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.autoLoadedForWeekday = Weekday.monday.rawValue
+
+        draft.loadExercises(from: source, context: context)
+
+        #expect(draft.autoLoadedForWeekday == nil)
+    }
+
     /// Returns a fresh in-memory container. Callers MUST hold the returned container for the
     /// duration of the test — `ModelContext` does not keep its `ModelContainer` alive, and a
     /// predicate fetch against a deallocated container's schema traps in
     /// `Schema.KeyPathCache.validateAndCache` (EXC_BREAKPOINT).
+    @MainActor
+    private static func makeContainer() throws -> ModelContainer {
+        let schema = Schema(SchemaV1.models)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [config])
+    }
+}
+
+// MARK: - DayTemplateAssignment Tests
+
+@Suite("DayTemplateAssignment Model Tests")
+@MainActor
+struct DayTemplateAssignmentTests {
+
+    @Test("DayTemplateAssignment initializes with a weekday and optional template")
+    func initialization() async throws {
+        let unassigned = DayTemplateAssignment(weekday: .monday)
+        #expect(unassigned.weekday == Weekday.monday.rawValue)
+        #expect(unassigned.template == nil)
+
+        let template = WorkoutTemplate(name: "Push Day A")
+        let assigned = DayTemplateAssignment(weekday: .friday, template: template)
+        #expect(assigned.weekday == Weekday.friday.rawValue)
+        #expect(assigned.template?.name == "Push Day A")
+    }
+
+    @Test("Deleting the assigned template nullifies the assignment rather than cascading")
+    func deletingTemplateNullifiesAssignment() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let template = WorkoutTemplate(name: "Push Day A")
+        context.insert(template)
+        let assignment = DayTemplateAssignment(weekday: .monday, template: template)
+        context.insert(assignment)
+        try context.save()
+
+        context.delete(template)
+        try context.save()
+
+        let assignments = try context.fetch(FetchDescriptor<DayTemplateAssignment>())
+        #expect(assignments.count == 1, "The assignment row itself must survive the template's deletion")
+        #expect(assignments.first?.template == nil)
+    }
+
     @MainActor
     private static func makeContainer() throws -> ModelContainer {
         let schema = Schema(SchemaV1.models)
@@ -615,6 +715,52 @@ struct ActiveWorkoutViewModelTests {
         #expect(draft.sourceTemplateID == nil)
         #expect(vm.sessionExercises.isEmpty)
         #expect(source.exercises.count == 1, "The real source template must be untouched")
+    }
+
+    @Test("saveWorkout resets the draft's autoLoadedForWeekday alongside sourceTemplateID")
+    func saveWorkoutResetsAutoLoadedForWeekday() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let sourceTE = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        sourceTE.exercise = exercise
+        sourceTE.template = source
+        context.insert(sourceTE)
+
+        let draft = WorkoutTemplate.draft(in: context)
+        draft.loadExercises(from: source, context: context)
+        draft.autoLoadedForWeekday = Weekday.monday.rawValue
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+        vm.saveWorkout()
+
+        #expect(draft.autoLoadedForWeekday == nil)
+    }
+
+    @Test("cancelWorkout leaves the draft's autoLoadedForWeekday untouched")
+    func cancelWorkoutLeavesAutoLoadedForWeekdayIntact() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let draft = WorkoutTemplate.draft(in: context)
+        let exercise = makeExercise()
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = draft
+        context.insert(te)
+        draft.autoLoadedForWeekday = Weekday.monday.rawValue
+
+        let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
+        vm.startWorkout()
+        vm.cancelWorkout()
+
+        #expect(draft.autoLoadedForWeekday == Weekday.monday.rawValue, "Cancelling shouldn't touch the draft's own staged state")
     }
 
     @Test("saveWorkout bumps the source template's lastUsedDate and timesStarted")
@@ -769,6 +915,36 @@ struct UserSettingsTests {
         settings.splitType = nil
         #expect(settings.preferredSplitType == nil)
     }
+
+    @Test("UserSettings defaults to .smart start mode and fallback mode")
+    func settingsDefaultsToSmartMode() async throws {
+        let settings = UserSettings()
+
+        #expect(settings.workoutStartMode == .smart)
+        #expect(settings.dayTemplateFallbackMode == .smart)
+    }
+
+    @Test("workoutStartMode round-trips through all 3 cases")
+    func workoutStartModeRoundTrips() async throws {
+        let settings = UserSettings()
+
+        for mode in WorkoutStartMode.allCases {
+            settings.workoutStartMode = mode
+            #expect(settings.workoutStartMode == mode)
+            #expect(settings.workoutStartModeRaw == mode.rawValue)
+        }
+    }
+
+    @Test("dayTemplateFallbackMode clamps .dayTemplate to .smart to avoid recursion")
+    func dayTemplateFallbackModeClampsDayTemplate() async throws {
+        let settings = UserSettings()
+
+        settings.dayTemplateFallbackMode = .freeform
+        #expect(settings.dayTemplateFallbackMode == .freeform)
+
+        settings.dayTemplateFallbackMode = .dayTemplate
+        #expect(settings.dayTemplateFallbackMode == .smart, "Fallback mode must never persist as .dayTemplate")
+    }
 }
 
 // MARK: - MuscleRecoveryState Tests
@@ -897,26 +1073,33 @@ struct ExerciseDatabaseTests {
             ExerciseSet.self,
             UserSettings.self,
             MuscleRecoveryState.self,
+            DayTemplateAssignment.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
         let context = container.mainContext
-        
+
         // Should be empty before seeding
         let beforeCount = try context.fetchCount(FetchDescriptor<Exercise>())
         #expect(beforeCount == 0)
-        
+
         // Seed
         SeedDataService.seedIfNeeded(modelContext: context)
-        
+
         // Should have exercises now
         let afterCount = try context.fetchCount(FetchDescriptor<Exercise>())
         #expect(afterCount >= 50)
-        
+
+        // Should have seeded one DayTemplateAssignment row per weekday
+        let dayAssignmentCount = try context.fetchCount(FetchDescriptor<DayTemplateAssignment>())
+        #expect(dayAssignmentCount == 7)
+
         // Seeding again should be a no-op
         SeedDataService.seedIfNeeded(modelContext: context)
         let secondCount = try context.fetchCount(FetchDescriptor<Exercise>())
         #expect(secondCount == afterCount)
+        let secondDayAssignmentCount = try context.fetchCount(FetchDescriptor<DayTemplateAssignment>())
+        #expect(secondDayAssignmentCount == 7, "Seeding again should not create duplicate assignment rows")
     }
 
     @Test("SeedDataService still seeds the sample template when a draft template already exists")
@@ -932,6 +1115,7 @@ struct ExerciseDatabaseTests {
             ExerciseSet.self,
             UserSettings.self,
             MuscleRecoveryState.self,
+            DayTemplateAssignment.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: [config])
@@ -1127,6 +1311,7 @@ private func makeTestContainer() throws -> ModelContainer {
         ExerciseSet.self,
         UserSettings.self,
         MuscleRecoveryState.self,
+        DayTemplateAssignment.self,
     ])
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     return try ModelContainer(for: schema, configurations: [config])

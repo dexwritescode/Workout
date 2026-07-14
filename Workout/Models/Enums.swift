@@ -218,4 +218,8 @@ enum Weekday: Int, CaseIterable, Identifiable {
     static var today: Weekday {
         Weekday(rawValue: Calendar.current.component(.weekday, from: Date())) ?? .sunday
     }
+
+    /// Monday-first ordering for UI display (the schedule editor, settings summary), independent
+    /// of `Calendar.Component.weekday`'s Sunday-first raw values.
+    static let displayOrder: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
 }

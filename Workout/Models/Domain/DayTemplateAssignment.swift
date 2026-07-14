@@ -13,7 +13,8 @@ import SwiftData
 final class DayTemplateAssignment {
     @Attribute(.unique) var weekday: Int  // Weekday raw value
 
-    @Relationship(deleteRule: .nullify)
+    /// Delete rule lives on `WorkoutTemplate.dayAssignments` (the array side) — deleting a
+    /// template nullifies this property rather than deleting the assignment row itself.
     var template: WorkoutTemplate?
 
     init(weekday: Weekday, template: WorkoutTemplate? = nil) {

@@ -254,8 +254,8 @@ struct WorkoutStagingView: View {
             headerCard
 
             VStack(spacing: 6) {
-                ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, te in
-                    exerciseRow(te, index: index)
+                ForEach(sortedExercises, id: \.id) { te in
+                    exerciseRow(te)
                 }
             }
 
@@ -330,16 +330,14 @@ struct WorkoutStagingView: View {
         )
     }
 
-    private func exerciseRow(_ te: TemplateExercise, index: Int) -> some View {
+    private func exerciseRow(_ te: TemplateExercise) -> some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(AppStyle.Colors.brand.opacity(0.1))
-                .frame(width: 28, height: 28)
-                .overlay(
-                    Text("\(index + 1)")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(AppStyle.Colors.brand)
-                )
+            ExerciseImageView(
+                mediaFileName: te.exercise?.mediaFileName,
+                animated: false,
+                cornerRadius: 8
+            )
+            .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(te.exercise?.name ?? "Unknown")

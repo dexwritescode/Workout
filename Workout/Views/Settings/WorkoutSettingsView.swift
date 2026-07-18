@@ -57,6 +57,7 @@ struct WorkoutSettingsView: View {
                                     Text(mode.title).tag(mode)
                                 }
                             }
+                            .accessibilityIdentifier("workoutStartModePicker")
                         }
                         Text(settings.workoutStartMode.description)
                             .font(.system(size: 13))
@@ -78,6 +79,7 @@ struct WorkoutSettingsView: View {
                                     Text(WorkoutStartMode.freeform.title).tag(WorkoutStartMode.freeform)
                                 }
                             }
+                            .accessibilityIdentifier("dayTemplateFallbackModePicker")
                             Text("What to do on a day with no scheduled template")
                                 .font(.system(size: 13))
                                 .foregroundStyle(AppStyle.Colors.textTertiary)
@@ -126,11 +128,13 @@ struct WorkoutSettingsView: View {
 
     private func pickerRow<P: View>(_ label: String, @ViewBuilder picker: () -> P) -> some View {
         HStack {
+            Text(label)
+                .font(.system(size: 16))
+                .foregroundStyle(AppStyle.Colors.text)
+            Spacer()
             picker()
                 .tint(AppStyle.Colors.textSecondary)
         }
-        .font(.system(size: 16))
-        .foregroundStyle(AppStyle.Colors.text)
         .padding(.horizontal, 16)
         .padding(.vertical, 5)
     }

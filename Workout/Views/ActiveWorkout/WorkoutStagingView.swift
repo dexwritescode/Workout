@@ -98,6 +98,7 @@ struct WorkoutStagingView: View {
                 } label: {
                     Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Workout Settings")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {

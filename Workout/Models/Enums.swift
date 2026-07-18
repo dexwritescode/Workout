@@ -154,3 +154,72 @@ enum SplitType: String, Codable, CaseIterable, Identifiable {
         }
     }
 }
+
+// MARK: - Workout Start Mode
+
+/// How the unified staging view populates itself when the Workout tab appears.
+enum WorkoutStartMode: String, Codable, CaseIterable, Identifiable {
+    case smart       // AI-generated
+    case dayTemplate // fixed weekly schedule
+    case freeform    // manual pick, no automation
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .smart: return "Smart Workout"
+        case .dayTemplate: return "Day Template"
+        case .freeform: return "Freeform"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .smart: return "Auto-generate a workout based on recovery status"
+        case .dayTemplate: return "Load a fixed template based on the day of the week"
+        case .freeform: return "Start blank and pick exercises manually"
+        }
+    }
+}
+
+// MARK: - Weekday
+
+/// Raw value matches `Calendar.Component.weekday` (1 = Sunday ... 7 = Saturday).
+enum Weekday: Int, CaseIterable, Identifiable {
+    case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
+
+    var id: Int { rawValue }
+
+    var shortName: String {
+        switch self {
+        case .sunday: return "Sun"
+        case .monday: return "Mon"
+        case .tuesday: return "Tue"
+        case .wednesday: return "Wed"
+        case .thursday: return "Thu"
+        case .friday: return "Fri"
+        case .saturday: return "Sat"
+        }
+    }
+
+    var fullName: String {
+        switch self {
+        case .sunday: return "Sunday"
+        case .monday: return "Monday"
+        case .tuesday: return "Tuesday"
+        case .wednesday: return "Wednesday"
+        case .thursday: return "Thursday"
+        case .friday: return "Friday"
+        case .saturday: return "Saturday"
+        }
+    }
+
+    /// Today's weekday, using the current calendar.
+    static var today: Weekday {
+        Weekday(rawValue: Calendar.current.component(.weekday, from: Date())) ?? .sunday
+    }
+
+    /// Monday-first ordering for UI display (the schedule editor, settings summary), independent
+    /// of `Calendar.Component.weekday`'s Sunday-first raw values.
+    static let displayOrder: [Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+}

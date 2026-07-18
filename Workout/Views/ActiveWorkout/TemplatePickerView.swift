@@ -17,11 +17,24 @@ struct TemplatePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @Query(
         filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
-        sort: \WorkoutTemplate.name
+        sort: \WorkoutTemplate.createdDate
     ) private var templates: [WorkoutTemplate]
 
+    /// Navigation title shown in pick mode — callers reusing this picker for a different flow
+    /// (e.g. assigning a day's template rather than loading one into the current workout) can
+    /// override the default. Ignored in manage mode, which always shows "Manage Templates".
+    var pickTitle: String = "Load Template"
+
+    /// When provided, shows a destructive "Clear Assignment" row above the template list —
+    /// lets a caller with something currently assigned (e.g. a day's template) remove it from
+    /// the same sheet used to assign it, instead of a separate, harder-to-discover gesture.
+    /// Pass nil (the default) when there's nothing to clear, or when this picker isn't being
+    /// used for an assignment flow at all.
+    var onClear: (() -> Void)? = nil
+
     /// Pick mode when provided (tapping a row selects and dismisses); Manage mode when nil
-    /// (tapping a row opens the template for editing).
+    /// (tapping a row opens the template for editing). Declared last so trailing-closure call
+    /// sites (`TemplatePickerView { template in ... }`) keep working.
     var onSelect: ((WorkoutTemplate) -> Void)? = nil
 
     @State private var showCreateTemplate = false
@@ -32,6 +45,20 @@ struct TemplatePickerView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let onClear {
+                    Button(role: .destructive) {
+                        onClear()
+                        dismiss()
+                    } label: {
+                        Label("Clear Assignment", systemImage: "xmark.circle")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(AppStyle.Colors.error)
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                }
+
                 if templates.isEmpty {
                     emptyState
                         .listRowBackground(Color.clear)
@@ -64,7 +91,7 @@ struct TemplatePickerView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
-            .navigationTitle(onSelect == nil ? "Manage Templates" : "Load Template")
+            .navigationTitle(onSelect == nil ? "Manage Templates" : pickTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

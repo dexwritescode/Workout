@@ -114,4 +114,92 @@ final class WorkoutUITests: XCTestCase {
         app.buttons["Regenerate"].tap()
         XCTAssertTrue(app.alerts["Regenerate workout?"].waitForExistence(timeout: 5), "Should confirm before discarding a freshly-loaded template")
     }
+
+    @MainActor
+    func testWorkoutSettingsModeSwitchTogglesFallbackAndScheduleRows() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Workout Settings"].waitForExistence(timeout: 5))
+        app.buttons["Workout Settings"].tap()
+
+        XCTAssertTrue(app.buttons["workoutStartModePicker"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["If No Template"].exists, "Fallback row should be hidden in Smart Workout mode")
+        XCTAssertFalse(app.staticTexts["Weekly Schedule"].exists, "Weekly Schedule row should be hidden in Smart Workout mode")
+
+        app.buttons["workoutStartModePicker"].tap()
+        app.buttons["Day Template"].tap()
+
+        XCTAssertTrue(app.staticTexts["If No Template"].waitForExistence(timeout: 5), "Fallback row should appear once Day Template is selected")
+        XCTAssertTrue(app.buttons["dayTemplateFallbackModePicker"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Weekly Schedule"].waitForExistence(timeout: 5), "Weekly Schedule row should appear once Day Template is selected")
+
+        // Regression: the "Mode" row's own label must stay visible (WRK-55 bug: it was blank,
+        // making the Start Mode and If No Template rows visually indistinguishable).
+        XCTAssertTrue(app.staticTexts["Mode"].exists)
+
+        app.buttons["workoutStartModePicker"].tap()
+        app.buttons["Freeform"].tap()
+
+        XCTAssertFalse(app.staticTexts["If No Template"].exists, "Fallback row should hide again once mode leaves Day Template")
+        XCTAssertFalse(app.staticTexts["Weekly Schedule"].exists)
+        XCTAssertTrue(app.staticTexts["Mode"].exists, "Start Mode row must still render at full width, not collapse, with only one row left")
+    }
+
+    @MainActor
+    func testWeeklyScheduleRowTapAssignsTemplateWithCorrectSheetTitle() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Workout Settings"].tap()
+        app.buttons["workoutStartModePicker"].tap()
+        app.buttons["Day Template"].tap()
+
+        XCTAssertTrue(app.staticTexts["Weekly Schedule"].waitForExistence(timeout: 5))
+        app.staticTexts["Weekly Schedule"].tap()
+
+        let mondayRow = app.buttons["weekdayRow-2"]
+        XCTAssertTrue(mondayRow.waitForExistence(timeout: 5))
+        // Tapping the element's default location hits its center — the blank space between the
+        // day name and the chevron that was previously untappable (WRK-55 bug: missing
+        // .contentShape(Rectangle()) meant only the rendered glyphs were hit-testable).
+        mondayRow.tap()
+
+        XCTAssertTrue(app.navigationBars["Assign Template"].waitForExistence(timeout: 5), "Sheet should use a context-appropriate title, not the misleading 'Load Template'")
+        XCTAssertFalse(app.navigationBars["Load Template"].exists)
+
+        XCTAssertTrue(app.staticTexts["Push Day A"].waitForExistence(timeout: 5))
+        app.staticTexts["Push Day A"].tap()
+
+        XCTAssertTrue(mondayRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(mondayRow.label.contains("Push Day A"), "Monday's row should reflect the newly assigned template: \(mondayRow.label)")
+    }
+
+    @MainActor
+    func testWeeklyScheduleClearAssignmentOnlyOffersClearWhenSomethingIsAssigned() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Workout Settings"].tap()
+        app.buttons["workoutStartModePicker"].tap()
+        app.buttons["Day Template"].tap()
+        app.staticTexts["Weekly Schedule"].tap()
+
+        let mondayRow = app.buttons["weekdayRow-2"]
+        XCTAssertTrue(mondayRow.waitForExistence(timeout: 5))
+        mondayRow.tap()
+
+        XCTAssertTrue(app.navigationBars["Assign Template"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Clear Assignment"].exists, "An unassigned day should not offer a clear option")
+
+        app.staticTexts["Push Day A"].tap()
+        XCTAssertTrue(mondayRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(mondayRow.label.contains("Push Day A"))
+
+        mondayRow.tap()
+        XCTAssertTrue(app.navigationBars["Assign Template"].waitForExistence(timeout: 5))
+        let clearButton = app.buttons["Clear Assignment"]
+        XCTAssertTrue(clearButton.waitForExistence(timeout: 5), "Once assigned, the sheet should offer a way to clear it")
+        clearButton.tap()
+
+        XCTAssertTrue(mondayRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(mondayRow.label.contains("None"), "Monday should be unassigned again after clearing: \(mondayRow.label)")
+    }
 }

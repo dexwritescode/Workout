@@ -272,6 +272,7 @@ final class ActiveWorkoutViewModel {
             template.exercises.removeAll()
             for te in existing { modelContext.delete(te) }
             template.sourceTemplateID = nil
+            template.autoLoadedForWeekday = nil
         }
     }
 

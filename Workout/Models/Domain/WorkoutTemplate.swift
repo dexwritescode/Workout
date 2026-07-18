@@ -28,11 +28,21 @@ final class WorkoutTemplate {
     var sourceTemplateID: UUID? = nil
     var timesStarted: Int = 0
 
+    /// Which weekday the day-template schedule system last auto-populated the draft for, if any.
+    /// `nil` means whatever's currently staged was placed there by the user (Load Template,
+    /// Regenerate, or hand-edits) — distinguishes an auto-load from a deliberate same-day
+    /// override so the next appear's schedule check doesn't silently clobber it. Meaningful only
+    /// when `isDraft == true`.
+    var autoLoadedForWeekday: Int? = nil
+
     @Relationship(deleteRule: .cascade, inverse: \TemplateExercise.template)
     var exercises: [TemplateExercise]
 
     @Relationship(deleteRule: .nullify, inverse: \WorkoutSession.template)
     var sessions: [WorkoutSession]?
+
+    @Relationship(deleteRule: .nullify, inverse: \DayTemplateAssignment.template)
+    var dayAssignments: [DayTemplateAssignment]?
 
     init(
         id: UUID = UUID(),
@@ -115,6 +125,7 @@ final class WorkoutTemplate {
 
         name = workout.name
         sourceTemplateID = nil
+        autoLoadedForWeekday = nil
     }
 
     /// Copies another template's exercises into this template's own rows — a deep copy, never a
@@ -132,6 +143,7 @@ final class WorkoutTemplate {
 
         name = source.name
         sourceTemplateID = source.id
+        autoLoadedForWeekday = nil
     }
 }
 

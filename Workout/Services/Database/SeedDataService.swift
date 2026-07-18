@@ -41,6 +41,7 @@ struct SeedDataService {
         seedDefaultSettings(modelContext: modelContext)
         seedSampleTemplates(modelContext: modelContext)
         seedRecoveryStates(modelContext: modelContext)
+        seedDayTemplateAssignments(modelContext: modelContext)
     }
     
     // MARK: - Recovery States
@@ -57,7 +58,21 @@ struct SeedDataService {
         }
         try? modelContext.save()
     }
-    
+
+    // MARK: - Day-Template Assignments
+
+    @MainActor
+    private static func seedDayTemplateAssignments(modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<DayTemplateAssignment>()
+        let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
+        guard existingCount == 0 else { return }
+
+        for weekday in Weekday.allCases {
+            modelContext.insert(DayTemplateAssignment(weekday: weekday))
+        }
+        try? modelContext.save()
+    }
+
     // MARK: - Exercise Seeding
     
     @MainActor

@@ -27,11 +27,11 @@ struct WorkoutStagingView: View {
     @State private var draft: WorkoutTemplate?
     @State private var isDirty = false
     @State private var selectedSplit: SplitType = .pushPullLegs
-    @State private var showLoadTemplate = false
-    @State private var showManageTemplates = false
+    @State private var showTemplateEntry = false
     @State private var showAddExercise = false
     @State private var exerciseToEdit: TemplateExercise?
     @State private var showRegenerateConfirm = false
+    @State private var pendingTemplateLoad: WorkoutTemplate?
 
     private var currentSplit: SplitType {
         settings.first?.splitType ?? .pushPullLegs
@@ -102,10 +102,11 @@ struct WorkoutStagingView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showManageTemplates = true
+                    showTemplateEntry = true
                 } label: {
                     Image(systemName: "list.bullet.rectangle")
                 }
+                .accessibilityLabel("Templates")
             }
         }
         .onAppear {
@@ -128,14 +129,17 @@ struct WorkoutStagingView: View {
                 refreshIfNeeded(draft)
             }
         }
-        .sheet(isPresented: $showManageTemplates) {
-            TemplatePickerView()
-        }
-        .sheet(isPresented: $showLoadTemplate) {
-            TemplatePickerView { template in
-                draft?.loadExercises(from: template, context: modelContext)
-                isDirty = false
+        .sheet(isPresented: $showTemplateEntry) {
+            TemplateEntryView { template in
+                if sortedExercises.isEmpty {
+                    draft?.loadExercises(from: template, context: modelContext)
+                    isDirty = false
+                } else {
+                    pendingTemplateLoad = template
+                }
             }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAddExercise) {
             ExercisePickerView { exercise in
@@ -150,6 +154,24 @@ struct WorkoutStagingView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This discards the current plan.")
+        }
+        .alert(
+            "Load Template?",
+            isPresented: Binding(
+                get: { pendingTemplateLoad != nil },
+                set: { if !$0 { pendingTemplateLoad = nil } }
+            )
+        ) {
+            Button("Load", role: .destructive) {
+                if let template = pendingTemplateLoad {
+                    draft?.loadExercises(from: template, context: modelContext)
+                    isDirty = false
+                }
+                pendingTemplateLoad = nil
+            }
+            Button("Cancel", role: .cancel) { pendingTemplateLoad = nil }
+        } message: {
+            Text("This replaces the current plan.")
         }
     }
 
@@ -193,9 +215,9 @@ struct WorkoutStagingView: View {
         case .smart:
             return "Tap Generate to create a workout\nbased on your recovery status."
         case .dayTemplate:
-            return "No template scheduled for today.\nLoad one to get started."
+            return "No template scheduled for today.\nTap Templates above to load one."
         case .freeform:
-            return "Load a template to get started."
+            return "Tap Templates above to load one."
         }
     }
 
@@ -209,6 +231,7 @@ struct WorkoutStagingView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(AppStyle.Colors.textSecondary)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
 
             if currentMode == .smart {
                 Button {
@@ -218,14 +241,6 @@ struct WorkoutStagingView: View {
                 }
                 .buttonStyle(PrimaryActionButtonStyle())
             }
-
-            Button {
-                showLoadTemplate = true
-            } label: {
-                Text(currentMode == .smart ? "Load Template Instead" : "Load Template")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(SecondaryButtonStyle())
         }
         .padding(.vertical, 32)
     }
@@ -268,28 +283,18 @@ struct WorkoutStagingView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: 10) {
+            if currentMode == .smart {
                 Button {
-                    showLoadTemplate = true
+                    regenerateTapped()
                 } label: {
-                    Text("Load Template")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                        Text("Regenerate")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(SecondaryButtonStyle())
-
-                if currentMode == .smart {
-                    Button {
-                        regenerateTapped()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 14))
-                            Text("Regenerate")
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                }
             }
         }
     }

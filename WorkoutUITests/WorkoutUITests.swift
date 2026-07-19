@@ -105,9 +105,12 @@ final class WorkoutUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5))
 
-        app.buttons["Load Template"].tap()
+        app.buttons["Templates"].tap()
         XCTAssertTrue(app.staticTexts["Push Day A"].waitForExistence(timeout: 5))
         app.staticTexts["Push Day A"].tap()
+
+        XCTAssertTrue(app.alerts["Load Template?"].waitForExistence(timeout: 5), "Should confirm before discarding the freshly-generated workout")
+        app.alerts["Load Template?"].buttons["Load"].tap()
 
         XCTAssertFalse(app.staticTexts["TRAINING SPLIT"].exists, "Split picker should be hidden once a template is loaded")
 

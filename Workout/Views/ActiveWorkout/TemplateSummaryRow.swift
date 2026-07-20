@@ -58,6 +58,7 @@ struct TemplateSummaryRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .contentShape(Rectangle())
         .background(AppStyle.Colors.surface1)
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
         .overlay(

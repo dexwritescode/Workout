@@ -306,6 +306,7 @@ struct WorkoutSummaryView: View {
                         }
                     }
                     .padding(16)
+                    .contentShape(Rectangle())
                     .background(AppStyle.Colors.surface1)
                     .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
                     .overlay(

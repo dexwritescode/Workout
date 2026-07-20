@@ -59,6 +59,7 @@ struct DataManagementView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -86,6 +87,7 @@ struct DataManagementView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 13)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

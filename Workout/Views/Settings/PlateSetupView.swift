@@ -80,6 +80,7 @@ struct PlateSetupView: View {
                                 .fill(plateColor(plate))
                                 .frame(width: 10, height: 28)
                         }
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

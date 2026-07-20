@@ -27,11 +27,11 @@ struct WorkoutStagingView: View {
     @State private var draft: WorkoutTemplate?
     @State private var isDirty = false
     @State private var selectedSplit: SplitType = .pushPullLegs
-    @State private var showLoadTemplate = false
-    @State private var showManageTemplates = false
+    @State private var showTemplateEntry = false
     @State private var showAddExercise = false
     @State private var exerciseToEdit: TemplateExercise?
     @State private var showRegenerateConfirm = false
+    @State private var pendingTemplateLoad: WorkoutTemplate?
 
     private var currentSplit: SplitType {
         settings.first?.splitType ?? .pushPullLegs
@@ -102,10 +102,11 @@ struct WorkoutStagingView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
-                    showManageTemplates = true
+                    showTemplateEntry = true
                 } label: {
                     Image(systemName: "list.bullet.rectangle")
                 }
+                .accessibilityLabel("Templates")
             }
         }
         .onAppear {
@@ -115,7 +116,7 @@ struct WorkoutStagingView: View {
             if self.draft == nil {
                 selectedSplit = currentSplit
             }
-            let draft = WorkoutTemplate.draft(in: modelContext)
+            let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: modelContext)
             self.draft = draft
             refreshIfNeeded(draft)
         }
@@ -128,14 +129,17 @@ struct WorkoutStagingView: View {
                 refreshIfNeeded(draft)
             }
         }
-        .sheet(isPresented: $showManageTemplates) {
-            TemplatePickerView()
-        }
-        .sheet(isPresented: $showLoadTemplate) {
-            TemplatePickerView { template in
-                draft?.loadExercises(from: template, context: modelContext)
-                isDirty = false
+        .sheet(isPresented: $showTemplateEntry) {
+            TemplateEntryView { template in
+                if sortedExercises.isEmpty {
+                    draft?.loadExercises(from: template, context: modelContext)
+                    isDirty = false
+                } else {
+                    pendingTemplateLoad = template
+                }
             }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showAddExercise) {
             ExercisePickerView { exercise in
@@ -150,6 +154,24 @@ struct WorkoutStagingView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This discards the current plan.")
+        }
+        .alert(
+            "Load Template?",
+            isPresented: Binding(
+                get: { pendingTemplateLoad != nil },
+                set: { if !$0 { pendingTemplateLoad = nil } }
+            )
+        ) {
+            Button("Load", role: .destructive) {
+                if let template = pendingTemplateLoad {
+                    draft?.loadExercises(from: template, context: modelContext)
+                    isDirty = false
+                }
+                pendingTemplateLoad = nil
+            }
+            Button("Cancel", role: .cancel) { pendingTemplateLoad = nil }
+        } message: {
+            Text("This replaces the current plan.")
         }
     }
 
@@ -193,9 +215,9 @@ struct WorkoutStagingView: View {
         case .smart:
             return "Tap Generate to create a workout\nbased on your recovery status."
         case .dayTemplate:
-            return "No template scheduled for today.\nLoad one to get started."
+            return "No template scheduled for today.\nTap Templates above to load one."
         case .freeform:
-            return "Load a template to get started."
+            return "Tap Templates above to load one."
         }
     }
 
@@ -209,6 +231,7 @@ struct WorkoutStagingView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(AppStyle.Colors.textSecondary)
                 .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
 
             if currentMode == .smart {
                 Button {
@@ -218,14 +241,6 @@ struct WorkoutStagingView: View {
                 }
                 .buttonStyle(PrimaryActionButtonStyle())
             }
-
-            Button {
-                showLoadTemplate = true
-            } label: {
-                Text(currentMode == .smart ? "Load Template Instead" : "Load Template")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(SecondaryButtonStyle())
         }
         .padding(.vertical, 32)
     }
@@ -253,43 +268,62 @@ struct WorkoutStagingView: View {
         VStack(spacing: 16) {
             headerCard
 
-            VStack(spacing: 6) {
-                ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, te in
-                    exerciseRow(te, index: index)
+            // Non-scrolling List (the outer ScrollView still owns scroll) purely to get native
+            // .swipeActions — same delete mechanism/shape as TemplateEditorView's exercise rows.
+            List {
+                ForEach(sortedExercises, id: \.id) { te in
+                    exerciseRow(te)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                deleteExercise(te)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 6, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(sortedExercises.count) * 74)
 
             Button {
                 showAddExercise = true
             } label: {
-                Label("Add Exercise", systemImage: "plus.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppStyle.Colors.brand)
+                HStack {
+                    Label("Add Exercise", systemImage: "plus.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppStyle.Colors.brand)
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .background(AppStyle.Colors.surface1)
+            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
+                    .stroke(AppStyle.Colors.border, lineWidth: 1)
+            )
 
-            HStack(spacing: 10) {
+            if currentMode == .smart {
                 Button {
-                    showLoadTemplate = true
+                    regenerateTapped()
                 } label: {
-                    Text("Load Template")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14))
+                        Text("Regenerate")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(SecondaryButtonStyle())
-
-                if currentMode == .smart {
-                    Button {
-                        regenerateTapped()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 14))
-                            Text("Regenerate")
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                }
             }
         }
     }
@@ -330,51 +364,38 @@ struct WorkoutStagingView: View {
         )
     }
 
-    private func exerciseRow(_ te: TemplateExercise, index: Int) -> some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(AppStyle.Colors.brand.opacity(0.1))
-                .frame(width: 28, height: 28)
-                .overlay(
-                    Text("\(index + 1)")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(AppStyle.Colors.brand)
+    private func exerciseRow(_ te: TemplateExercise) -> some View {
+        Button {
+            exerciseToEdit = te
+        } label: {
+            HStack(spacing: 14) {
+                ExerciseImageView(
+                    mediaFileName: te.exercise?.mediaFileName,
+                    animated: false,
+                    cornerRadius: 8
                 )
+                .frame(width: 44, height: 44)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(te.exercise?.name ?? "Unknown")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(AppStyle.Colors.text)
-                Text("\(te.targetSets) sets × \(te.targetReps) reps · \(te.exercise?.primaryMusclesDisplayString ?? "")")
-                    .font(.system(size: 13))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(te.exercise?.name ?? "Unknown")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppStyle.Colors.text)
+                    Text("\(te.targetSets) sets × \(te.targetReps) reps · \(te.exercise?.primaryMusclesDisplayString ?? "")")
+                        .font(.system(size: 13))
+                        .foregroundStyle(AppStyle.Colors.textTertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppStyle.Colors.textTertiary)
             }
-
-            Spacer()
-
-            Button {
-                exerciseToEdit = te
-            } label: {
-                Image(systemName: "pencil")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.textTertiary)
-                    .frame(width: 32, height: 32)
-                    .background(AppStyle.Colors.surface2)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                deleteExercise(te)
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 14))
-                    .foregroundStyle(AppStyle.Colors.error)
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .buttonStyle(.plain)
         .background(AppStyle.Colors.surface1)
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
         .overlay(

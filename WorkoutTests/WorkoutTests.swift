@@ -408,37 +408,37 @@ struct WorkoutTemplateTests {
         #expect(template.templateDescription == "Push day for Push/Pull/Legs split")
     }
 
-    @Test("WorkoutTemplate initializes with isDraft false by default")
+    @Test("WorkoutTemplate initializes with no draftKind by default")
     func templateDefaultsToNotDraft() async throws {
         let template = WorkoutTemplate(name: "Push Day")
 
-        #expect(template.isDraft == false)
+        #expect(template.draftKind == nil)
     }
 
-    @Test("WorkoutTemplate.draft creates a single isDraft-flagged row")
+    @Test("WorkoutTemplate.stagingTemplate creates a single kind-flagged row")
     func draftCreatesFlaggedRow() async throws {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
 
-        #expect(draft.isDraft == true)
+        #expect(draft.draftKind == .workoutStaging)
         let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
         #expect(allTemplates.count == 1)
         #expect(allTemplates.first?.id == draft.id)
     }
 
-    @Test("WorkoutTemplate.draft returns the same row on repeated calls")
+    @Test("WorkoutTemplate.stagingTemplate returns the same row on repeated calls for the same kind")
     func draftIsSingleton() async throws {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let first = WorkoutTemplate.draft(in: context)
-        let second = WorkoutTemplate.draft(in: context)
+        let first = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
+        let second = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
 
         #expect(first.id == second.id)
         let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
-        #expect(allTemplates.count == 1, "Calling draft(in:) again should not create a second row")
+        #expect(allTemplates.count == 1, "Calling stagingTemplate(kind:in:) again should not create a second row")
     }
 
     @Test("Draft rows are excluded from a non-draft template fetch")
@@ -446,12 +446,87 @@ struct WorkoutTemplateTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
         context.insert(WorkoutTemplate(name: "Push Day A"))
-        _ = WorkoutTemplate.draft(in: context)
+        _ = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
 
         let nonDraftTemplates = WorkoutTemplate.nonDraftTemplates(in: context)
 
         #expect(nonDraftTemplates.count == 1)
         #expect(nonDraftTemplates.first?.name == "Push Day A")
+    }
+
+    @Test("stagingTemplate(kind:) keeps a separate singleton row per kind")
+    func stagingTemplateKindsAreIndependent() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let workoutDraft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
+        let templateDraft = WorkoutTemplate.stagingTemplate(kind: .templateStaging, in: context)
+
+        #expect(workoutDraft.id != templateDraft.id)
+        #expect(workoutDraft.draftKind == .workoutStaging)
+        #expect(templateDraft.draftKind == .templateStaging)
+
+        let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+        #expect(allTemplates.count == 2)
+    }
+
+    @Test("existingStagingTemplate(kind:) returns nil without creating a row")
+    func existingStagingTemplateDoesNotCreate() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        #expect(WorkoutTemplate.existingStagingTemplate(kind: .templateStaging, in: context) == nil)
+
+        let allTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+        #expect(allTemplates.isEmpty)
+    }
+
+    @Test("copyExercises(from:) deep-copies exercises without touching source-tracking fields")
+    func copyExercisesLeavesSourceTrackingUntouched() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let source = WorkoutTemplate(name: "Push Day A")
+        context.insert(source)
+        let exercise = makeExercise(name: "Bench Press")
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = source
+        context.insert(te)
+
+        let target = WorkoutTemplate(name: "Real Template")
+        target.sourceTemplateID = UUID() // pre-existing value that copyExercises must not clobber
+        context.insert(target)
+
+        target.copyExercises(from: source, context: context)
+
+        #expect(target.exercises.count == 1)
+        #expect(target.exercises.first?.exercise?.id == exercise.id)
+        #expect(target.exercises.first?.id != te.id, "Copy must be a distinct row, not a live reference")
+        #expect(target.name == "Real Template", "copyExercises must not overwrite name (unlike loadExercises)")
+        #expect(target.sourceTemplateID != nil, "copyExercises must not touch source-tracking fields")
+    }
+
+    @Test("clearExercises(context:) removes all exercises and their sets")
+    func clearExercisesRemovesRows() async throws {
+        let container = try Self.makeContainer()
+        let context = container.mainContext
+
+        let template = WorkoutTemplate(name: "Push Day A")
+        context.insert(template)
+        let exercise = makeExercise(name: "Bench Press")
+        context.insert(exercise)
+        let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
+        te.exercise = exercise
+        te.template = template
+        context.insert(te)
+
+        template.clearExercises(context: context)
+
+        #expect(template.exercises.isEmpty)
+        let remaining = try context.fetch(FetchDescriptor<TemplateExercise>())
+        #expect(remaining.isEmpty)
     }
 
     @Test("template(withID:in:) resolves a specific template by id")
@@ -476,7 +551,7 @@ struct WorkoutTemplateTests {
 
         let source = WorkoutTemplate(name: "Push Day A")
         context.insert(source)
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.loadExercises(from: source, context: context) // give it a sourceTemplateID to clear
 
         let exercise = makeExercise(name: "Bench Press")
@@ -519,7 +594,7 @@ struct WorkoutTemplateTests {
         sourceTE.template = source
         context.insert(sourceTE)
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.loadExercises(from: source, context: context)
 
         #expect(draft.name == "Push Day A")
@@ -535,7 +610,7 @@ struct WorkoutTemplateTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.autoLoadedForWeekday = Weekday.monday.rawValue
 
         let workout = WorkoutEngine.GeneratedWorkout(
@@ -557,7 +632,7 @@ struct WorkoutTemplateTests {
         let source = WorkoutTemplate(name: "Push Day A")
         context.insert(source)
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.autoLoadedForWeekday = Weekday.monday.rawValue
 
         draft.loadExercises(from: source, context: context)
@@ -633,7 +708,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         let exercise = makeExercise(name: "Bench Press")
         context.insert(exercise)
         let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
@@ -654,7 +729,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.name = "Push Day"
         let exercise = makeExercise()
         context.insert(exercise)
@@ -704,7 +779,7 @@ struct ActiveWorkoutViewModelTests {
         sourceTE.template = source
         context.insert(sourceTE)
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.loadExercises(from: source, context: context)
 
         let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
@@ -731,7 +806,7 @@ struct ActiveWorkoutViewModelTests {
         sourceTE.template = source
         context.insert(sourceTE)
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.loadExercises(from: source, context: context)
         draft.autoLoadedForWeekday = Weekday.monday.rawValue
 
@@ -747,7 +822,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         let exercise = makeExercise()
         context.insert(exercise)
         let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
@@ -778,7 +853,7 @@ struct ActiveWorkoutViewModelTests {
         sourceTE.template = source
         context.insert(sourceTE)
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         draft.loadExercises(from: source, context: context)
 
         let vm = ActiveWorkoutViewModel(template: draft, modelContext: context)
@@ -793,7 +868,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         let exercise = makeExercise()
         context.insert(exercise)
         let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
@@ -813,7 +888,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         let exercise = makeExercise()
         context.insert(exercise)
         let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
@@ -834,7 +909,7 @@ struct ActiveWorkoutViewModelTests {
         let container = try Self.makeContainer()
         let context = container.mainContext
 
-        let draft = WorkoutTemplate.draft(in: context)
+        let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
         let exercise = makeExercise()
         context.insert(exercise)
         let te = TemplateExercise(order: 0, targetSets: 3, targetReps: 10)
@@ -1122,7 +1197,7 @@ struct ExerciseDatabaseTests {
         let context = container.mainContext
 
         // Simulate the draft row already existing before seeding ever runs.
-        _ = WorkoutTemplate.draft(in: context)
+        _ = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: context)
 
         SeedDataService.seedIfNeeded(modelContext: context)
 

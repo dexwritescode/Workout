@@ -431,6 +431,7 @@ struct WorkoutProgressView: View {
                                 .foregroundStyle(AppStyle.Colors.brand)
                         }
                     }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

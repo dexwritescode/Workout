@@ -11,12 +11,10 @@ import SwiftUI
 import SwiftData
 
 struct TemplatePickerView: View {
-    private static let isNotDraft = false
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(
-        filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
+        filter: #Predicate<WorkoutTemplate> { $0.draftKindRaw == nil },
         sort: \WorkoutTemplate.createdDate
     ) private var templates: [WorkoutTemplate]
 
@@ -78,12 +76,17 @@ struct TemplatePickerView: View {
                                     Label("Delete", systemImage: "trash")
                                 }
                                 .tint(.red)
-                                Button {
-                                    templateToEdit = template
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
+                                // Manage mode (onSelect == nil) already opens the editor on tap,
+                                // so an Edit swipe action there would be a redundant second path
+                                // to the same screen. Pick mode has no other route to edit.
+                                if onSelect != nil {
+                                    Button {
+                                        templateToEdit = template
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(AppStyle.Colors.brand)
                                 }
-                                .tint(AppStyle.Colors.brand)
                             }
                     }
                 }
@@ -100,6 +103,7 @@ struct TemplatePickerView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Add Template")
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
@@ -149,58 +153,7 @@ struct TemplatePickerView: View {
     }
 
     private func templateRow(_ template: WorkoutTemplate) -> some View {
-        HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AppStyle.Colors.brand.opacity(0.1))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(AppStyle.Colors.brand.opacity(0.2), lineWidth: 1)
-                )
-                .overlay(
-                    Image(systemName: "dumbbell")
-                        .font(.system(size: 16))
-                        .foregroundStyle(AppStyle.Colors.brand)
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(template.name)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppStyle.Colors.text)
-
-                if !template.templateDescription.isEmpty {
-                    Text(template.templateDescription)
-                        .font(.system(size: 13))
-                        .foregroundStyle(AppStyle.Colors.textSecondary)
-                        .lineLimit(1)
-                }
-
-                HStack(spacing: 10) {
-                    Label("\(template.exercises.count) exercises", systemImage: "square.grid.2x2")
-                        .font(.system(size: 11))
-                        .foregroundStyle(AppStyle.Colors.textTertiary)
-                        .lineLimit(1)
-
-                    if let lastUsed = template.lastUsedDate {
-                        Label(lastUsed.formatted(.relative(presentation: .named)), systemImage: "calendar")
-                            .font(.system(size: 11))
-                            .foregroundStyle(AppStyle.Colors.textTertiary)
-                            .lineLimit(1)
-                    }
-                }
-                .padding(.top, 3)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(AppStyle.Colors.surface1)
-        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                .stroke(AppStyle.Colors.border, lineWidth: 1)
-        )
+        TemplateSummaryRow(template: template)
     }
 
     // MARK: - Empty State

@@ -111,7 +111,7 @@ struct SeedDataService {
     @MainActor
     private static func seedSampleTemplates(modelContext: ModelContext) {
         let descriptor = FetchDescriptor<WorkoutTemplate>(
-            predicate: #Predicate { $0.isDraft == false }
+            predicate: #Predicate { $0.draftKindRaw == nil }
         )
         let existingCount = (try? modelContext.fetchCount(descriptor)) ?? 0
         guard existingCount == 0 else { return }

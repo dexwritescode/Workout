@@ -19,12 +19,16 @@ final class WorkoutTemplate {
     var name: String
     var templateDescription: String
     var isPreBuilt: Bool
-    var isDraft: Bool = false
+
+    /// Stored as a raw String (not the enum directly) for #Predicate compatibility — same
+    /// convention as MuscleGroup/WeightUnit/WorkoutStartMode elsewhere in the model layer.
+    /// nil means a real, permanent, user-visible template.
+    var draftKindRaw: String? = nil
     var createdDate: Date
     var lastUsedDate: Date?
 
     /// The real template this draft's exercises were last loaded from, if any (nil after a fresh
-    /// AI generation). Meaningful only when `isDraft == true`.
+    /// AI generation). Meaningful only for the `.workoutStaging` draft.
     var sourceTemplateID: UUID? = nil
     var timesStarted: Int = 0
 
@@ -32,7 +36,7 @@ final class WorkoutTemplate {
     /// `nil` means whatever's currently staged was placed there by the user (Load Template,
     /// Regenerate, or hand-edits) — distinguishes an auto-load from a deliberate same-day
     /// override so the next appear's schedule check doesn't silently clobber it. Meaningful only
-    /// when `isDraft == true`.
+    /// for the `.workoutStaging` draft.
     var autoLoadedForWeekday: Int? = nil
 
     @Relationship(deleteRule: .cascade, inverse: \TemplateExercise.template)
@@ -59,33 +63,49 @@ final class WorkoutTemplate {
         self.exercises = []
     }
 
-    // MARK: - Draft (Smart Workout staging area)
+    // MARK: - Staging rows (Smart Workout draft + Template Editor scratch buffer)
 
-    /// Returns the single scratch template used to stage a Smart Workout draft before it's
-    /// started. Created lazily on first use, never seeded at launch.
-    /// `isDraft` is set on the object before it is ever inserted/saved, so there is no
-    /// persisted state where a draft row exists with `isDraft == false`.
-    static func draft(in context: ModelContext) -> WorkoutTemplate {
+    enum TemplateKind: String, Codable {
+        case workoutStaging
+        case templateStaging
+    }
+
+    var draftKind: TemplateKind? {
+        get { draftKindRaw.flatMap(TemplateKind.init(rawValue:)) }
+        set { draftKindRaw = newValue?.rawValue }
+    }
+
+    /// Fetches the single scratch row for the given kind, if one already exists — does not create.
+    static func existingStagingTemplate(kind: TemplateKind, in context: ModelContext) -> WorkoutTemplate? {
+        let kindRaw = kind.rawValue
         var descriptor = FetchDescriptor<WorkoutTemplate>(
-            predicate: #Predicate { $0.isDraft == true }
+            predicate: #Predicate { $0.draftKindRaw == kindRaw }
         )
         descriptor.fetchLimit = 1
-        if let existing = try? context.fetch(descriptor).first {
+        return try? context.fetch(descriptor).first
+    }
+
+    /// Returns the single scratch template used to stage either the Smart Workout draft or the
+    /// Template Editor's in-progress edits, depending on `kind`. Created lazily on first use,
+    /// never seeded at launch. `draftKind` is set on the object before it is ever inserted/saved,
+    /// so there is no persisted state where a staging row exists with `draftKind == nil`.
+    static func stagingTemplate(kind: TemplateKind, in context: ModelContext) -> WorkoutTemplate {
+        if let existing = existingStagingTemplate(kind: kind, in: context) {
             return existing
         }
 
-        let draft = WorkoutTemplate(name: "Draft")
-        draft.isDraft = true
-        context.insert(draft)
+        let staging = WorkoutTemplate(name: "Draft")
+        staging.draftKind = kind
+        context.insert(staging)
         try? context.save()
-        return draft
+        return staging
     }
 
-    /// Returns all real, user-visible templates — excludes the scratch draft row.
+    /// Returns all real, user-visible templates — excludes any scratch staging row.
     /// Shared by `TemplatePickerView`'s query and anywhere else that lists templates.
     static func nonDraftTemplates(in context: ModelContext) -> [WorkoutTemplate] {
         var descriptor = FetchDescriptor<WorkoutTemplate>(
-            predicate: #Predicate { $0.isDraft == false }
+            predicate: #Predicate { $0.draftKindRaw == nil }
         )
         descriptor.sortBy = [SortDescriptor(\.name)]
         return (try? context.fetch(descriptor)) ?? []
@@ -101,15 +121,34 @@ final class WorkoutTemplate {
 
     // MARK: - Draft mutation
 
-    /// Rebuilds this template's exercises from a fresh AI generation, discarding whatever was
-    /// staged before. Clears `sourceTemplateID` since this content has no real-template source.
-    func rebuildExercises(from workout: WorkoutEngine.GeneratedWorkout, context: ModelContext) {
+    /// Deletes all of this template's exercises (and their cascading sets). Used both by the
+    /// rebuild/load operations below and to clean up a staging row when it's no longer needed
+    /// (Template Editor cancel, or after its contents have been committed to a real template).
+    func clearExercises(context: ModelContext) {
         // context.delete() alone doesn't retroactively clear an already-held relationship array,
         // so remove from `exercises` explicitly first (same pattern as removeExercise(at:) in
         // ActiveWorkoutViewModel) rather than relying on a later fetch to reflect the deletion.
         let existing = exercises
         exercises.removeAll()
         for te in existing { context.delete(te) }
+    }
+
+    /// Deep-copies another template's exercises into this template's own rows, replacing whatever
+    /// was there. Never a live reference; the source template is left untouched. Pure exercise
+    /// copy only — no source-tracking fields touched, safe to use in either direction (workout
+    /// draft ⇠ real template, or real template ⇠ Template Editor's staging row).
+    func copyExercises(from source: WorkoutTemplate, context: ModelContext) {
+        clearExercises(context: context)
+        for sourceExercise in source.exercises.sorted(by: { $0.order < $1.order }) {
+            let copy = sourceExercise.duplicated(in: context)
+            copy.template = self
+        }
+    }
+
+    /// Rebuilds this template's exercises from a fresh AI generation, discarding whatever was
+    /// staged before. Clears `sourceTemplateID` since this content has no real-template source.
+    func rebuildExercises(from workout: WorkoutEngine.GeneratedWorkout, context: ModelContext) {
+        clearExercises(context: context)
 
         for (index, suggestion) in workout.exercises.enumerated() {
             let te = TemplateExercise(
@@ -132,15 +171,7 @@ final class WorkoutTemplate {
     /// live reference; the source template is left untouched. Sets `sourceTemplateID` so later
     /// steps (usage tracking, save-back-to-original) can resolve where this content came from.
     func loadExercises(from source: WorkoutTemplate, context: ModelContext) {
-        let existing = exercises
-        exercises.removeAll()
-        for te in existing { context.delete(te) }
-
-        for sourceExercise in source.exercises.sorted(by: { $0.order < $1.order }) {
-            let copy = sourceExercise.duplicated(in: context)
-            copy.template = self
-        }
-
+        copyExercises(from: source, context: context)
         name = source.name
         sourceTemplateID = source.id
         autoLoadedForWeekday = nil

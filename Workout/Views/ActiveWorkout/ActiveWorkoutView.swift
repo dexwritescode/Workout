@@ -329,6 +329,7 @@ struct ActiveWorkoutView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .contentShape(Rectangle())
         .background(isCurrent ? AppStyle.Colors.brand.opacity(0.07) : AppStyle.Colors.surface1)
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
         .overlay(

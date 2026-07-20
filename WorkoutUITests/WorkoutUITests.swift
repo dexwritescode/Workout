@@ -105,14 +105,91 @@ final class WorkoutUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Regenerate"].waitForExistence(timeout: 5))
 
-        app.buttons["Load Template"].tap()
+        app.buttons["Templates"].tap()
         XCTAssertTrue(app.staticTexts["Push Day A"].waitForExistence(timeout: 5))
         app.staticTexts["Push Day A"].tap()
+
+        XCTAssertTrue(app.alerts["Load Template?"].waitForExistence(timeout: 5), "Should confirm before discarding the freshly-generated workout")
+        app.alerts["Load Template?"].buttons["Load"].tap()
 
         XCTAssertFalse(app.staticTexts["TRAINING SPLIT"].exists, "Split picker should be hidden once a template is loaded")
 
         app.buttons["Regenerate"].tap()
         XCTAssertTrue(app.alerts["Regenerate workout?"].waitForExistence(timeout: 5), "Should confirm before discarding a freshly-loaded template")
+    }
+
+    @MainActor
+    func testCreatingATemplateTapsIntoExerciseRowThenSavesAndAppearsInList() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        let nameField = app.textFields["Template Name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText("Test Template")
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        // Back in TemplateEditorView once the picker sheet's dismiss animation settles — tapping
+        // the exercise row (not a separate edit icon) opens the sets/reps editor.
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5), "Exercise row should appear in the template editor")
+        app.staticTexts["Barbell Bench Press"].tap()
+        // Check the nav bar rather than a Form section further down — the hero image now
+        // renders at full (uncapped) height to match ExerciseDetailView, which can push later
+        // sections below the initially-rendered viewport of the lazily-loaded Form.
+        XCTAssertTrue(app.navigationBars.buttons["Done"].waitForExistence(timeout: 5), "Tapping the row should open the set editor")
+        app.navigationBars.buttons["Done"].tap()
+
+        app.buttons["Save"].tap()
+
+        XCTAssertTrue(app.staticTexts["Test Template"].waitForExistence(timeout: 5), "New template should appear in Manage Templates after saving")
+    }
+
+    @MainActor
+    func testSwipingAnExerciseRowInTemplateEditorDeletesIt() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        // Swipe the full row Button, not the child text label -- swiping a narrow text element's
+        // own frame is unreliable across screen sizes for triggering a List row's swipeActions
+        // (flaked on the iPhone 17 CI runner specifically).
+        let exerciseRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Barbell Bench Press'")).firstMatch
+        XCTAssertTrue(exerciseRow.waitForExistence(timeout: 5))
+        exerciseRow.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        XCTAssertFalse(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 2), "Exercise row should be gone after swipe-to-delete")
+    }
+
+    @MainActor
+    func testCancellingTemplateCreationDiscardsStagedExercises() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+        app.navigationBars.buttons["Cancel"].tap()
+
+        app.buttons["Add Template"].tap()
+        XCTAssertTrue(app.buttons["addExerciseInTemplateEditor"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Barbell Bench Press"].exists, "Cancelling should discard the staged exercise, not leak it into the next new-template session")
     }
 
     @MainActor

@@ -65,6 +65,8 @@ struct TemplateExerciseEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
+                heroImage
+
                 exerciseHeader
 
                 setsSection
@@ -108,28 +110,56 @@ struct TemplateExerciseEditorView: View {
         }
     }
 
+    // MARK: - Hero Image
+
+    @ViewBuilder
+    private var heroImage: some View {
+        if templateExercise.exercise?.mediaFileName != nil {
+            Section {
+                ExerciseImageView(
+                    mediaFileName: templateExercise.exercise?.mediaFileName,
+                    animated: true,
+                    cornerRadius: 0,
+                    contentMode: .fit
+                )
+                .frame(maxWidth: .infinity)
+                .listRowInsets(EdgeInsets())
+            }
+            .listRowBackground(Color.clear)
+        }
+    }
+
     // MARK: - Exercise Header
 
     private var exerciseHeader: some View {
         Section {
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(templateExercise.exercise?.name ?? "Exercise")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(AppStyle.Colors.text)
-                if let muscles = templateExercise.exercise?.primaryMusclesDisplayString {
-                    Text(muscles)
+
+                if let exercise = templateExercise.exercise {
+                    HStack(spacing: 6) {
+                        Text(exercise.difficulty.rawValue)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AppStyle.difficultyColor(exercise.difficulty))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(AppStyle.difficultyColor(exercise.difficulty).opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                        Text(exercise.primaryMusclesDisplayString)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(AppStyle.Colors.textSecondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(AppStyle.Colors.textSecondary.opacity(0.13))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+
+                    Text(exercise.equipmentDisplayString)
                         .font(.system(size: 14))
                         .foregroundStyle(AppStyle.Colors.textSecondary)
-                }
-                if let isCompound = templateExercise.exercise?.isCompound {
-                    Text(isCompound ? "Compound" : "Isolation")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(isCompound ? AppStyle.Colors.compound : AppStyle.Colors.isolation)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background((isCompound ? AppStyle.Colors.compound : AppStyle.Colors.isolation).opacity(0.13))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .padding(.top, 2)
                 }
             }
             .padding(.vertical, 4)
@@ -143,6 +173,16 @@ struct TemplateExerciseEditorView: View {
         Section {
             ForEach(Array(setRows.indices), id: \.self) { idx in
                 setRowView(idx: idx)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if setRows.count > 1 {
+                            Button(role: .destructive) {
+                                setRows.remove(at: idx)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                    }
             }
 
             Button {
@@ -203,19 +243,6 @@ struct TemplateExerciseEditorView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .padding(.leading, 5)
-
-            Spacer()
-
-            Button {
-                guard setRows.count > 1 else { return }
-                setRows.remove(at: idx)
-            } label: {
-                Image(systemName: "minus.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(setRows.count > 1 ? AppStyle.Colors.error : AppStyle.Colors.textTertiary)
-            }
-            .buttonStyle(.plain)
-            .disabled(setRows.count <= 1)
         }
         .padding(.vertical, 2)
     }

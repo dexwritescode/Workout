@@ -11,12 +11,10 @@ import SwiftUI
 import SwiftData
 
 struct TemplatePickerView: View {
-    private static let isNotDraft = false
-
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(
-        filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
+        filter: #Predicate<WorkoutTemplate> { $0.draftKindRaw == nil },
         sort: \WorkoutTemplate.createdDate
     ) private var templates: [WorkoutTemplate]
 
@@ -105,6 +103,7 @@ struct TemplatePickerView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Add Template")
                 }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

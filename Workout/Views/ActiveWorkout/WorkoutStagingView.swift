@@ -116,7 +116,7 @@ struct WorkoutStagingView: View {
             if self.draft == nil {
                 selectedSplit = currentSplit
             }
-            let draft = WorkoutTemplate.draft(in: modelContext)
+            let draft = WorkoutTemplate.stagingTemplate(kind: .workoutStaging, in: modelContext)
             self.draft = draft
             refreshIfNeeded(draft)
         }
@@ -268,20 +268,49 @@ struct WorkoutStagingView: View {
         VStack(spacing: 16) {
             headerCard
 
-            VStack(spacing: 6) {
+            // Non-scrolling List (the outer ScrollView still owns scroll) purely to get native
+            // .swipeActions — same delete mechanism/shape as TemplateEditorView's exercise rows.
+            List {
                 ForEach(sortedExercises, id: \.id) { te in
                     exerciseRow(te)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                deleteExercise(te)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 6, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(sortedExercises.count) * 74)
 
             Button {
                 showAddExercise = true
             } label: {
-                Label("Add Exercise", systemImage: "plus.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppStyle.Colors.brand)
+                HStack {
+                    Label("Add Exercise", systemImage: "plus.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppStyle.Colors.brand)
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .background(AppStyle.Colors.surface1)
+            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
+                    .stroke(AppStyle.Colors.border, lineWidth: 1)
+            )
 
             if currentMode == .smart {
                 Button {
@@ -336,48 +365,37 @@ struct WorkoutStagingView: View {
     }
 
     private func exerciseRow(_ te: TemplateExercise) -> some View {
-        HStack(spacing: 14) {
-            ExerciseImageView(
-                mediaFileName: te.exercise?.mediaFileName,
-                animated: false,
-                cornerRadius: 8
-            )
-            .frame(width: 44, height: 44)
+        Button {
+            exerciseToEdit = te
+        } label: {
+            HStack(spacing: 14) {
+                ExerciseImageView(
+                    mediaFileName: te.exercise?.mediaFileName,
+                    animated: false,
+                    cornerRadius: 8
+                )
+                .frame(width: 44, height: 44)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(te.exercise?.name ?? "Unknown")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(AppStyle.Colors.text)
-                Text("\(te.targetSets) sets × \(te.targetReps) reps · \(te.exercise?.primaryMusclesDisplayString ?? "")")
-                    .font(.system(size: 13))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(te.exercise?.name ?? "Unknown")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(AppStyle.Colors.text)
+                    Text("\(te.targetSets) sets × \(te.targetReps) reps · \(te.exercise?.primaryMusclesDisplayString ?? "")")
+                        .font(.system(size: 13))
+                        .foregroundStyle(AppStyle.Colors.textTertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppStyle.Colors.textTertiary)
             }
-
-            Spacer()
-
-            Button {
-                exerciseToEdit = te
-            } label: {
-                Image(systemName: "pencil")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.textTertiary)
-                    .frame(width: 32, height: 32)
-                    .background(AppStyle.Colors.surface2)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                deleteExercise(te)
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 14))
-                    .foregroundStyle(AppStyle.Colors.error)
-            }
-            .buttonStyle(.plain)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .buttonStyle(.plain)
         .background(AppStyle.Colors.surface1)
         .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
         .overlay(

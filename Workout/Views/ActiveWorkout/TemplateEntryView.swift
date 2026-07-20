@@ -12,11 +12,9 @@ import SwiftUI
 import SwiftData
 
 struct TemplateEntryView: View {
-    private static let isNotDraft = false
-
     @Environment(\.dismiss) private var dismiss
     @Query(
-        filter: #Predicate<WorkoutTemplate> { $0.isDraft == isNotDraft },
+        filter: #Predicate<WorkoutTemplate> { $0.draftKindRaw == nil },
         sort: \WorkoutTemplate.createdDate
     ) private var templates: [WorkoutTemplate]
 

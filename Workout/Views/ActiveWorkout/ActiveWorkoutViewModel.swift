@@ -55,7 +55,7 @@ final class ActiveWorkoutViewModel {
     
     /// Starts a new workout session, creating CompletedExercise entries for each template exercise
     func startWorkout() {
-        let isDraftSession = template?.isDraft ?? false
+        let isDraftSession = template?.draftKind == .workoutStaging
         let newSession = WorkoutSession(template: isDraftSession ? nil : template)
         if isDraftSession || template == nil { newSession.sessionTitle = sessionName }
         modelContext.insert(newSession)
@@ -267,10 +267,8 @@ final class ActiveWorkoutViewModel {
 
         // The draft's own exercises are cleared only on an actual completion, so the next time
         // the staging view appears it starts from a clean slate rather than an already-used plan.
-        if let template, template.isDraft {
-            let existing = template.exercises
-            template.exercises.removeAll()
-            for te in existing { modelContext.delete(te) }
+        if let template, template.draftKind == .workoutStaging {
+            template.clearExercises(context: modelContext)
             template.sourceTemplateID = nil
             template.autoLoadedForWeekday = nil
         }

@@ -229,6 +229,13 @@ struct ExerciseTrackingView: View {
 
     // MARK: - Sets Table
 
+    private func deleteSwipeButton(action: @escaping () -> Void) -> some View {
+        Button(role: .destructive, action: action) {
+            Label("Delete", systemImage: "trash")
+        }
+        .tint(.red)
+    }
+
     private var setsTable: some View {
         VStack(spacing: 0) {
             HStack {
@@ -264,39 +271,51 @@ struct ExerciseTrackingView: View {
                 }
 
                 // Rows
-                ForEach(0..<targetSets, id: \.self) { i in
-                    let done = i < completedSets.count
-                    let s = done ? completedSets[i] : nil
-                    let isCurrent = i == completedSets.count && !allSetsComplete
-                    let isEditing = editingSet != nil && editingSet?.id == s?.id
+                // POC: native List + .swipeActions instead of SwipeToRevealDelete, to test
+                // whether inline TextField editing and conditional row types behave well inside
+                // a List. Non-scrolling (the outer ScrollView still owns scroll) with an
+                // approximate fixed height — rough edges expected, this may get reverted.
+                List {
+                    ForEach(0..<targetSets, id: \.self) { i in
+                        let done = i < completedSets.count
+                        let s = done ? completedSets[i] : nil
+                        let isCurrent = i == completedSets.count && !allSetsComplete
+                        let isEditing = editingSet != nil && editingSet?.id == s?.id
 
-                    if isCurrent {
-                        if isCurrentRowEditing {
-                            inputRow(index: i, isEditing: false)
-                        } else {
-                            SwipeToRevealDelete(onDelete: { deleteExtraRow() }) {
+                        if isCurrent {
+                            if isCurrentRowEditing {
+                                inputRow(index: i, isEditing: false)
+                            } else {
                                 currentSetDisplayRow(index: i)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        deleteSwipeButton { deleteExtraRow() }
+                                    }
                             }
-                        }
-                    } else if isEditing {
-                        inputRow(index: i, isEditing: true)
-                    } else if done {
-                        SwipeToRevealDelete(onDelete: { deleteSet(s!) }) {
+                        } else if isEditing {
+                            inputRow(index: i, isEditing: true)
+                        } else if done {
                             Button { beginEditing(s!) } label: {
                                 completedRow(index: i, set: s!)
                             }
                             .buttonStyle(.plain)
-                        }
-                    } else {
-                        SwipeToRevealDelete(onDelete: { deleteExtraRow() }) {
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                deleteSwipeButton { deleteSet(s!) }
+                            }
+                        } else {
                             futureRow(index: i)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    deleteSwipeButton { deleteExtraRow() }
+                                }
                         }
                     }
-
-                    if i < targetSets - 1 {
-                        AppStyle.Colors.border.frame(height: 1).padding(.leading, 16)
-                    }
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparatorTint(AppStyle.Colors.border)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .scrollDisabled(true)
+                .frame(height: CGFloat(targetSets) * 60)
             }
             .background(AppStyle.Colors.surface1)
             .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))

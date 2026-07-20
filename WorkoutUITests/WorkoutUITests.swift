@@ -163,7 +163,12 @@ final class WorkoutUITests: XCTestCase {
         app.staticTexts["Barbell Bench Press"].tap()
 
         XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
-        app.staticTexts["Barbell Bench Press"].swipeLeft()
+        // Swipe the full row Button, not the child text label -- swiping a narrow text element's
+        // own frame is unreliable across screen sizes for triggering a List row's swipeActions
+        // (flaked on the iPhone 17 CI runner specifically).
+        let exerciseRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Barbell Bench Press'")).firstMatch
+        XCTAssertTrue(exerciseRow.waitForExistence(timeout: 5))
+        exerciseRow.swipeLeft()
         app.buttons["Delete"].tap()
 
         XCTAssertFalse(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 2), "Exercise row should be gone after swipe-to-delete")

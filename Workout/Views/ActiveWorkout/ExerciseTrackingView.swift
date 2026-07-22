@@ -271,10 +271,9 @@ struct ExerciseTrackingView: View {
                 }
 
                 // Rows
-                // POC: native List + .swipeActions instead of SwipeToRevealDelete, to test
-                // whether inline TextField editing and conditional row types behave well inside
-                // a List. Non-scrolling (the outer ScrollView still owns scroll) with an
-                // approximate fixed height — rough edges expected, this may get reverted.
+                // Non-scrolling List (the outer ScrollView still owns scroll) purely to get
+                // native .swipeActions — same delete mechanism/shape as the other exercise/set
+                // lists in the app. Fixed height assumes a uniform 60pt row height.
                 List {
                     ForEach(0..<targetSets, id: \.self) { i in
                         let done = i < completedSets.count
@@ -384,31 +383,13 @@ struct ExerciseTrackingView: View {
             // Weight input
             TextField("0", value: $weight, format: .number)
                 .keyboardType(.decimalPad)
-                .font(AppStyle.Typography.mono(14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .multilineTextAlignment(.center)
-                .frame(height: 36)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(AppStyle.Colors.brand.opacity(0.4), lineWidth: 1)
-                )
+                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
 
             // Reps input
             TextField("0", value: $reps, format: .number)
                 .keyboardType(.numberPad)
-                .font(AppStyle.Typography.mono(14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .multilineTextAlignment(.center)
-                .frame(height: 36)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(AppStyle.Colors.brand.opacity(0.4), lineWidth: 1)
-                )
+                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
 
             Spacer().frame(width: 40)
@@ -484,26 +465,15 @@ struct ExerciseTrackingView: View {
                 .frame(width: 32, alignment: .leading)
 
             Text(weight > 0 ? userUnit.formatted(weight) : "—")
-                .font(AppStyle.Typography.mono(14, weight: .bold))
+                .setValueFieldStyle()
                 .foregroundStyle(weight > 0 ? AppStyle.Colors.text : AppStyle.Colors.textTertiary)
-                .multilineTextAlignment(.center)
-                .frame(height: 36)
                 .frame(maxWidth: .infinity)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppStyle.Colors.brand.opacity(0.25), lineWidth: 1))
                 .contentShape(Rectangle())
                 .onTapGesture { isCurrentRowEditing = true }
 
             Text("\(Int(reps))")
-                .font(AppStyle.Typography.mono(14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .multilineTextAlignment(.center)
-                .frame(height: 36)
+                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(AppStyle.Colors.brand.opacity(0.25), lineWidth: 1))
                 .contentShape(Rectangle())
                 .onTapGesture { isCurrentRowEditing = true }
 

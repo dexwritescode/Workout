@@ -175,6 +175,26 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testSwipingAnExerciseRowInActiveWorkoutRemovesItFromTheList() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
+        app.buttons["Start Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Finish Workout"].waitForExistence(timeout: 5), "Expected to land in-progress with a Finish Workout button")
+
+        let exerciseRows = app.buttons.matching(identifier: "activeWorkoutExerciseRow")
+        let initialCount = exerciseRows.count
+        XCTAssertGreaterThan(initialCount, 1, "Need at least two exercises to verify swipe-to-delete removes exactly one")
+
+        exerciseRows.firstMatch.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        XCTAssertEqual(exerciseRows.count, initialCount - 1, "Exercise row should be gone after swipe-to-delete")
+        XCTAssertTrue(app.buttons["Finish Workout"].exists, "Deleting an exercise mid-workout should not dismiss the active workout screen")
+    }
+
+    @MainActor
     func testCancellingTemplateCreationDiscardsStagedExercises() throws {
         let app = XCUIApplication()
 

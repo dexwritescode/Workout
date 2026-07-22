@@ -194,30 +194,32 @@ struct ActiveWorkoutView: View {
     // MARK: - Exercise List
 
     private func exerciseList(viewModel: ActiveWorkoutViewModel) -> some View {
-        ScrollView {
-            VStack(spacing: 6) {
-                ForEach(Array(viewModel.allTemplateExercises.enumerated()), id: \.element.id) { index, templateExercise in
-                    SwipeToRevealDelete(onDelete: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            viewModel.removeExercise(at: index)
-                        }
-                    }) {
-                        Button {
-                            selectedTrackingIndex = index
-                        } label: {
-                            exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index)
-                        }
-                        .buttonStyle(.plain)
+        List {
+            ForEach(Array(viewModel.allTemplateExercises.enumerated()), id: \.element.id) { index, templateExercise in
+                Button {
+                    selectedTrackingIndex = index
+                } label: {
+                    exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("activeWorkoutExerciseRow")
+                .listRowInsets(EdgeInsets(top: 3, leading: 0, bottom: 3, trailing: 0))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        viewModel.removeExercise(at: index)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
-                    .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .move(edge: .bottom)),
-                        removal: .opacity.combined(with: .move(edge: .trailing))
-                    ))
+                    .tint(.red)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .contentMargins(.horizontal, 16, for: .scrollContent)
+        .contentMargins(.vertical, 12, for: .scrollContent)
     }
 
     private func exerciseRowContent(viewModel: ActiveWorkoutViewModel, templateExercise: TemplateExercise, index: Int) -> some View {

@@ -211,13 +211,8 @@ struct TemplateExerciseEditorView: View {
 
             TextField("0", value: $setRows[idx].weight, format: .number)
                 .keyboardType(.decimalPad)
-                .multilineTextAlignment(.center)
-                .frame(width: 60)
-                .font(AppStyle.Typography.mono(15, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .padding(.vertical, 5)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .setValueFieldStyle()
+                .frame(width: 64)
 
             Text(userUnit.abbreviation)
                 .font(.system(size: 12))
@@ -231,13 +226,8 @@ struct TemplateExerciseEditorView: View {
 
             TextField("10", value: $setRows[idx].reps, format: .number)
                 .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .frame(width: 44)
-                .font(AppStyle.Typography.mono(15, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .padding(.vertical, 5)
-                .background(AppStyle.Colors.surface2)
-                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .setValueFieldStyle()
+                .frame(width: 52)
 
             Text("reps")
                 .font(.system(size: 12))

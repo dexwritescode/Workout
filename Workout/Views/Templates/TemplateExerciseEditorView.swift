@@ -171,6 +171,8 @@ struct TemplateExerciseEditorView: View {
 
     private var setsSection: some View {
         Section {
+            columnHeader
+
             ForEach(Array(setRows.indices), id: \.self) { idx in
                 setRowView(idx: idx)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -200,41 +202,37 @@ struct TemplateExerciseEditorView: View {
         .listRowSeparatorTint(AppStyle.Colors.border)
     }
 
-    private func setRowView(idx: Int) -> some View {
-        HStack(spacing: 0) {
-            Text("Set \(idx + 1)")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.brand)
-                .frame(width: 52, alignment: .leading)
+    private var columnHeader: some View {
+        HStack {
+            Text("SET")
+                .frame(width: 32, alignment: .leading)
+            Text("WEIGHT")
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text("REPS")
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(AppStyle.Colors.textTertiary)
+    }
 
-            Spacer()
+    private func setRowView(idx: Int) -> some View {
+        HStack(spacing: 8) {
+            Text("\(idx + 1)")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(AppStyle.Colors.brand)
+                .frame(width: 32, alignment: .leading)
 
             TextField("0", value: $setRows[idx].weight, format: .number)
                 .keyboardType(.decimalPad)
+                .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
-                .frame(width: 64)
-
-            Text(userUnit.abbreviation)
-                .font(.system(size: 12))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
-                .padding(.horizontal, 5)
-
-            Text("×")
-                .font(.system(size: 13))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
-                .padding(.horizontal, 5)
 
             TextField("10", value: $setRows[idx].reps, format: .number)
                 .keyboardType(.numberPad)
+                .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
-                .frame(width: 52)
-
-            Text("reps")
-                .font(.system(size: 12))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
-                .padding(.leading, 5)
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Rest Section

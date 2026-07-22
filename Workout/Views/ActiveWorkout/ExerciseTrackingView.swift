@@ -383,14 +383,14 @@ struct ExerciseTrackingView: View {
             // Weight input
             TextField("0", value: $weight, format: .number)
                 .keyboardType(.decimalPad)
-                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
+                .setValueFieldStyle()
 
             // Reps input
             TextField("0", value: $reps, format: .number)
                 .keyboardType(.numberPad)
-                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
+                .setValueFieldStyle()
 
             Spacer().frame(width: 40)
         }
@@ -465,15 +465,15 @@ struct ExerciseTrackingView: View {
                 .frame(width: 32, alignment: .leading)
 
             Text(weight > 0 ? userUnit.formatted(weight) : "—")
+                .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
                 .foregroundStyle(weight > 0 ? AppStyle.Colors.text : AppStyle.Colors.textTertiary)
-                .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
                 .onTapGesture { isCurrentRowEditing = true }
 
             Text("\(Int(reps))")
-                .setValueFieldStyle()
                 .frame(maxWidth: .infinity)
+                .setValueFieldStyle()
                 .contentShape(Rectangle())
                 .onTapGesture { isCurrentRowEditing = true }
 

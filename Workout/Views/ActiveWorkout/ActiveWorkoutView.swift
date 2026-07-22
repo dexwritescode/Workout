@@ -41,7 +41,11 @@ struct ActiveWorkoutView: View {
         VStack(spacing: 0) {
             switch viewModel.state {
             case .notStarted:
-                preWorkoutView(viewModel: viewModel)
+                // ActiveWorkoutCoordinator.start() always calls viewModel.startWorkout() before
+                // this view can observe a non-nil coordinator.viewModel, so this branch never
+                // actually renders. WorkoutState still needs the case for the ViewModel's own
+                // bookkeeping (see cancelWorkout()), so the switch keeps a trivial fallback here.
+                Color.clear
             case .inProgress:
                 activeWorkoutView(viewModel: viewModel)
             case .finished:
@@ -140,36 +144,12 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    // MARK: - Pre-Workout
-
-    private func preWorkoutView(viewModel: ActiveWorkoutViewModel) -> some View {
-        VStack(spacing: 0) {
-            exerciseList(viewModel: viewModel, highlight: false)
-
-            // Start button
-            Button {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                viewModel.startWorkout()
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 15))
-                    Text("Start Workout")
-                        .font(.system(size: 16, weight: .bold))
-                }
-            }
-            .buttonStyle(PrimaryActionButtonStyle())
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-        }
-    }
-
     // MARK: - Active Workout
 
     private func activeWorkoutView(viewModel: ActiveWorkoutViewModel) -> some View {
         VStack(spacing: 0) {
             elapsedTimerBar(viewModel: viewModel)
-            exerciseList(viewModel: viewModel, highlight: true)
+            exerciseList(viewModel: viewModel)
 
             // Finish button
             Button {
@@ -213,37 +193,26 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Exercise List
 
-    private func exerciseList(viewModel: ActiveWorkoutViewModel, highlight: Bool) -> some View {
+    private func exerciseList(viewModel: ActiveWorkoutViewModel) -> some View {
         ScrollView {
             VStack(spacing: 6) {
                 ForEach(Array(viewModel.allTemplateExercises.enumerated()), id: \.element.id) { index, templateExercise in
-                    if highlight {
-                        SwipeToRevealDelete(onDelete: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                viewModel.removeExercise(at: index)
-                            }
-                        }) {
-                            Button {
-                                selectedTrackingIndex = index
-                            } label: {
-                                exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index, highlight: highlight)
-                            }
-                            .buttonStyle(.plain)
+                    SwipeToRevealDelete(onDelete: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            viewModel.removeExercise(at: index)
                         }
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .bottom)),
-                            removal: .opacity.combined(with: .move(edge: .trailing))
-                        ))
-                    } else if !highlight, let exercise = templateExercise.exercise {
-                        NavigationLink {
-                            ExerciseDetailView(exercise: exercise)
+                    }) {
+                        Button {
+                            selectedTrackingIndex = index
                         } label: {
-                            exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index, highlight: highlight)
+                            exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index)
                         }
                         .buttonStyle(.plain)
-                    } else {
-                        exerciseRowContent(viewModel: viewModel, templateExercise: templateExercise, index: index, highlight: highlight)
                     }
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                        removal: .opacity.combined(with: .move(edge: .trailing))
+                    ))
                 }
             }
             .padding(.horizontal, 16)
@@ -251,8 +220,8 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private func exerciseRowContent(viewModel: ActiveWorkoutViewModel, templateExercise: TemplateExercise, index: Int, highlight: Bool) -> some View {
-        let isCurrent = highlight && index == viewModel.currentExerciseIndex
+    private func exerciseRowContent(viewModel: ActiveWorkoutViewModel, templateExercise: TemplateExercise, index: Int) -> some View {
+        let isCurrent = index == viewModel.currentExerciseIndex
         let completedExercise = viewModel.sortedCompletedExercises.count > index
             ? viewModel.sortedCompletedExercises[index]
             : nil
@@ -290,7 +259,7 @@ struct ActiveWorkoutView: View {
                     .font(.system(size: 15, weight: isCurrent ? .bold : .medium))
                     .foregroundStyle(AppStyle.Colors.text)
 
-                if highlight && completedSetsCount > 0 {
+                if completedSetsCount > 0 {
                     Text("\(completedSetsCount)/\(templateExercise.targetSets) sets logged")
                         .font(.system(size: 13))
                         .foregroundStyle(AppStyle.Colors.textTertiary)
@@ -303,7 +272,7 @@ struct ActiveWorkoutView: View {
                         .foregroundStyle(AppStyle.Colors.textTertiary)
                 }
 
-                if highlight && isCurrent && !isExerciseDone {
+                if isCurrent && !isExerciseDone {
                     Text("Tap to track sets →")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(AppStyle.Colors.brand)

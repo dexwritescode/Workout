@@ -64,6 +64,7 @@ struct SecondaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: AppStyle.Radius.card)
                     .stroke(AppStyle.Colors.border, lineWidth: 1)
             )
+            .contentShape(Rectangle())
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .opacity(configuration.isPressed ? 0.8 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)

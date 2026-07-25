@@ -51,6 +51,28 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testDiscardButtonRespondsOutsideItsTextLabel() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
+        app.buttons["Start Workout"].tap()
+
+        let finishButton = app.buttons["Finish Workout"]
+        XCTAssertTrue(finishButton.waitForExistence(timeout: 5), "Expected to land in-progress with a Finish Workout button")
+        finishButton.tap()
+
+        let discardButton = app.buttons["Discard"]
+        XCTAssertTrue(discardButton.waitForExistence(timeout: 5), "Expected WorkoutSummaryView with Discard button")
+
+        // Tap near the button's edge, away from its centered text label, to prove the whole
+        // button — not just the text glyphs — registers the tap.
+        discardButton.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+
+        let confirmation = app.staticTexts["Discard Workout?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5), "Tapping near the Discard button's edge should trigger the discard confirmation dialog")
+    }
+
+    @MainActor
     func testStartWorkoutButtonHiddenWhileWorkoutActive() throws {
         let app = XCUIApplication()
 

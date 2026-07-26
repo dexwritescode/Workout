@@ -291,26 +291,9 @@ struct WorkoutStagingView: View {
             .scrollDisabled(true)
             .frame(height: CGFloat(sortedExercises.count) * 74)
 
-            Button {
+            AddExerciseButton {
                 showAddExercise = true
-            } label: {
-                HStack {
-                    Label("Add Exercise", systemImage: "plus.circle.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(AppStyle.Colors.brand)
-                    Spacer()
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .background(AppStyle.Colors.surface1)
-            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
-                    .stroke(AppStyle.Colors.border, lineWidth: 1)
-            )
 
             if currentMode == .smart {
                 Button {

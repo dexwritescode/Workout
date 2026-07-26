@@ -73,6 +73,29 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testAddExerciseIsInlineAndCancelButtonDirectlyTriggersConfirmationDuringActiveWorkout() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
+        app.buttons["Start Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Finish Workout"].waitForExistence(timeout: 5), "Expected to land in-progress with a Finish Workout button")
+
+        // Add Exercise should be inline on the active workout screen, not buried in a toolbar menu.
+        XCTAssertTrue(app.buttons["Add Exercise"].waitForExistence(timeout: 5), "Add Exercise should be inline during an active workout")
+
+        let cancelButton = app.buttons["Cancel Workout"]
+        XCTAssertTrue(cancelButton.waitForExistence(timeout: 5), "Expected a direct cancel button, not a toolbar menu")
+        cancelButton.tap()
+
+        // Confirmation dialogs anchored to a toolbar item render as a compact popover on this iOS
+        // version rather than a bottom action sheet, and drop the .cancel-role button entirely in
+        // that presentation (dismissed by tapping outside instead) — matching how the Discard-flow
+        // confirmation is tested elsewhere in this file, only the trigger itself is verified here.
+        XCTAssertTrue(app.staticTexts["Cancel Workout?"].waitForExistence(timeout: 5), "Tapping the button should directly trigger the cancel confirmation, with no menu in between")
+    }
+
+    @MainActor
     func testStartWorkoutButtonHiddenWhileWorkoutActive() throws {
         let app = XCUIApplication()
 
@@ -255,6 +278,7 @@ final class WorkoutUITests: XCTestCase {
         exerciseRow.swipeLeft()
         app.buttons["Delete"].tap()
 
+        XCTAssertTrue(app.navigationBars["New Template"].waitForExistence(timeout: 2), "Should still be in the template editor sheet right after deleting the last exercise")
         XCTAssertFalse(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 2), "Exercise row should be gone after swipe-to-delete")
     }
 

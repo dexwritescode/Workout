@@ -173,6 +173,38 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testRestTimeFieldOpensPopoverAndUseDefaultResetsIt() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        let restField = app.buttons["restTimeField"]
+        XCTAssertTrue(restField.waitForExistence(timeout: 5))
+        XCTAssertTrue(restField.label.contains("Default"), "A newly added exercise should inherit the global rest-time default")
+
+        restField.tap()
+
+        let wheel = app.pickerWheels.firstMatch
+        XCTAssertTrue(wheel.waitForExistence(timeout: 5), "Expected the rest-time wheel picker to appear in a popover")
+        wheel.adjust(toPickerWheelValue: "2:00")
+
+        let useDefaultButton = app.buttons["Use Default"]
+        XCTAssertTrue(useDefaultButton.waitForExistence(timeout: 5), "Per-exercise popover should offer a way back to the global default")
+        useDefaultButton.tap()
+
+        XCTAssertTrue(restField.label.contains("Default"), "Use Default should reset the field back to inheriting the global default")
+    }
+
+    @MainActor
     func testAddingAndSwipeDeletingASetRowInTemplateExerciseEditor() throws {
         let app = XCUIApplication()
 

@@ -101,7 +101,7 @@ final class ActiveWorkoutViewModel {
     func addExercise(_ exercise: Exercise) {
         guard let session else { return }
         let order = allTemplateExercises.count
-        let te = TemplateExercise(order: order, targetSets: 3, targetReps: 10, restSeconds: 90)
+        let te = TemplateExercise(order: order, targetSets: 3, targetReps: 10, restSeconds: 0)
         te.exercise = exercise
         modelContext.insert(te)
         adhocExercises.append(te)

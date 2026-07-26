@@ -472,7 +472,7 @@ struct WorkoutStagingView: View {
 
     private func addExercise(_ exercise: Exercise) {
         guard let draft else { return }
-        let te = TemplateExercise(order: draft.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 90)
+        let te = TemplateExercise(order: draft.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 0)
         te.exercise = exercise
         te.template = draft
         modelContext.insert(te)

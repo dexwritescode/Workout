@@ -176,7 +176,7 @@ struct TemplateEditorView: View {
 
     private func addExercise(_ exercise: Exercise) {
         guard let stagingTemplate else { return }
-        let te = TemplateExercise(order: stagingTemplate.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 90)
+        let te = TemplateExercise(order: stagingTemplate.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 0)
         te.exercise = exercise
         te.template = stagingTemplate
         modelContext.insert(te)

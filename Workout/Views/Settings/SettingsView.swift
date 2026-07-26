@@ -108,17 +108,19 @@ struct SettingsView: View {
                 // Workout Defaults
                 settingsSection("Workout Defaults") {
                     VStack(alignment: .leading, spacing: 2) {
-                        pickerRow("Rest Between Sets") {
-                            Picker("Rest Between Sets", selection: Binding(
+                        HStack {
+                            Text("Rest Between Sets")
+                            Spacer()
+                            RestTimePickerField(seconds: Binding(
                                 get: { settings.defaultRestTime },
                                 set: { settings.defaultRestTime = $0 }
-                            )) {
-                                Text("60s").tag(60)
-                                Text("90s").tag(90)
-                                Text("120s").tag(120)
-                                Text("180s").tag(180)
-                            }
+                            ))
+                            .frame(width: 100)
                         }
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppStyle.Colors.text)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 5)
                         Text("Timer duration after completing a set")
                             .font(.system(size: 13))
                             .foregroundStyle(AppStyle.Colors.textTertiary)

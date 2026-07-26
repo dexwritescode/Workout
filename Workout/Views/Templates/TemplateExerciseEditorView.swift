@@ -28,20 +28,8 @@ struct TemplateExerciseEditorView: View {
     @State private var setRows: [SetRow]
     @State private var restSeconds: Int
 
-    private var restOptions: [(label: String, seconds: Int)] {
-        let globalDefault = allSettings.first?.defaultRestTime ?? 90
-        let label = globalDefault % 60 == 0
-            ? "\(globalDefault / 60) min"
-            : "\(globalDefault) sec"
-        return [
-            ("Default (\(label))", 0),
-            ("30 sec", 30),
-            ("1 min",  60),
-            ("90 sec", 90),
-            ("2 min",  120),
-            ("3 min",  180),
-            ("5 min",  300),
-        ]
+    private var globalDefaultRestSeconds: Int {
+        allSettings.first?.defaultRestTime ?? 90
     }
 
     init(templateExercise: TemplateExercise, onSave: @escaping () -> Void = {}) {
@@ -222,23 +210,8 @@ struct TemplateExerciseEditorView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Rest Between Sets").sectionHeader()
 
-            Picker("Rest between sets", selection: $restSeconds) {
-                ForEach(restOptions, id: \.seconds) { option in
-                    Text(option.label).tag(option.seconds)
-                }
-            }
-            .foregroundStyle(AppStyle.Colors.text)
-            .pickerStyle(.menu)
-            .tint(AppStyle.Colors.brand)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppStyle.Colors.surface1)
-            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                    .stroke(AppStyle.Colors.border, lineWidth: 1)
-            )
+            RestTimePickerField(seconds: $restSeconds, defaultSeconds: globalDefaultRestSeconds)
+                .frame(width: 140)
         }
     }
 

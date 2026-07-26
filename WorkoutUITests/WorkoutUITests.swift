@@ -173,6 +173,36 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testAddingAndSwipeDeletingASetRowInTemplateExerciseEditor() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        let weightFields = app.textFields.matching(identifier: "templateSetWeightField")
+        XCTAssertTrue(weightFields.firstMatch.waitForExistence(timeout: 5), "Expected the sets list to be visible")
+        let initialCount = weightFields.count
+
+        let addSetButton = app.buttons["addSetButton"]
+        XCTAssertTrue(addSetButton.waitForExistence(timeout: 5))
+        addSetButton.tap()
+        XCTAssertEqual(weightFields.count, initialCount + 1, "Add Set should append exactly one row")
+
+        weightFields.firstMatch.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        XCTAssertEqual(weightFields.count, initialCount, "Swipe-to-delete should remove exactly one row")
+    }
+
+    @MainActor
     func testSwipingAnExerciseRowInTemplateEditorDeletesIt() throws {
         let app = XCUIApplication()
 

@@ -251,108 +251,68 @@ struct ExerciseTrackingView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.bottom, 10)
 
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("SET")
-                        .frame(width: 32, alignment: .leading)
-                    Text("WEIGHT")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("REPS")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Spacer().frame(width: 40)
-                }
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .overlay(alignment: .bottom) {
-                    AppStyle.Colors.border.frame(height: 1)
-                }
+            SetsListCard(rowCount: targetSets, rowContent: { i in
+                let done = i < completedSets.count
+                let s = done ? completedSets[i] : nil
+                let isCurrent = i == completedSets.count && !allSetsComplete
+                let isEditingThisRow = editingSet != nil && editingSet?.id == s?.id
 
-                // Rows
-                // Non-scrolling List (the outer ScrollView still owns scroll) purely to get
-                // native .swipeActions — same delete mechanism/shape as the other exercise/set
-                // lists in the app. Fixed height assumes a uniform 60pt row height.
-                List {
-                    ForEach(0..<targetSets, id: \.self) { i in
-                        let done = i < completedSets.count
-                        let s = done ? completedSets[i] : nil
-                        let isCurrent = i == completedSets.count && !allSetsComplete
-                        let isEditing = editingSet != nil && editingSet?.id == s?.id
-
-                        if isCurrent {
-                            if isCurrentRowEditing {
-                                inputRow(index: i, isEditing: false)
-                            } else {
-                                currentSetDisplayRow(index: i)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        deleteSwipeButton { deleteExtraRow() }
-                                    }
-                            }
-                        } else if isEditing {
-                            inputRow(index: i, isEditing: true)
-                        } else if done {
-                            Button { beginEditing(s!) } label: {
-                                completedRow(index: i, set: s!)
-                            }
-                            .buttonStyle(.plain)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                deleteSwipeButton { deleteSet(s!) }
-                            }
+                Group {
+                    if isCurrent {
+                        if isCurrentRowEditing {
+                            inputRow(index: i)
                         } else {
-                            futureRow(index: i)
+                            currentSetDisplayRow(index: i)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     deleteSwipeButton { deleteExtraRow() }
                                 }
                         }
+                    } else if isEditingThisRow {
+                        inputRow(index: i)
+                    } else if done {
+                        Button { beginEditing(s!) } label: {
+                            completedRow(index: i, set: s!)
+                        }
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            deleteSwipeButton { deleteSet(s!) }
+                        }
+                    } else {
+                        futureRow(index: i)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                deleteSwipeButton { deleteExtraRow() }
+                            }
                     }
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(AppStyle.Colors.border)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .scrollDisabled(true)
-                .frame(height: CGFloat(targetSets) * 60)
-            }
-            .background(AppStyle.Colors.surface1)
-            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                    .stroke(AppStyle.Colors.border, lineWidth: 1)
-            )
-
-            Button {
+            }, onAddSet: {
                 extraSets += 1
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle")
-                    Text("Add Set")
-                }
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(AppStyle.Colors.brand)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(AppStyle.Colors.brand.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppStyle.Radius.card)
-                        .stroke(AppStyle.Colors.brand.opacity(0.2), lineWidth: 1)
-                )
-            }
-            .padding(.top, 8)
+            })
         }
+    }
+
+    // MARK: - Set Index Badge
+
+    // Plain number for not-yet-completed/current/editing rows; a green checkmark badge
+    // overlays the number (not a replacement) once a set is completed — no reserved trailing
+    // column needed for completion state.
+    private func indexBadge(_ index: Int, color: Color, filled: Bool = false) -> some View {
+        Text("\(index + 1)")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(filled ? .white : color)
+            .frame(width: 28, height: 28)
+            .background {
+                if filled {
+                    Circle().fill(AppStyle.Colors.success)
+                }
+            }
+            .frame(width: 32, alignment: .leading)
     }
 
     // MARK: - Row Types
 
     private func completedRow(index: Int, set: ExerciseSet) -> some View {
         HStack {
-            Text("\(index + 1)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.text)
-                .frame(width: 32, alignment: .leading)
+            indexBadge(index, color: AppStyle.Colors.text, filled: true)
 
             Text(userUnit.display(set.weight, storedIn: set.storedWeightUnit))
                 .font(.system(size: 15, weight: .medium))
@@ -363,22 +323,14 @@ struct ExerciseTrackingView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(AppStyle.Colors.success)
-                .frame(width: 40)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 11)
+        .frame(height: SetsListRowMetrics.height)
     }
 
-    private func inputRow(index: Int, isEditing: Bool) -> some View {
+    private func inputRow(index: Int) -> some View {
         HStack(spacing: 8) {
-            Text("\(index + 1)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(isEditing ? AppStyle.Colors.brand : AppStyle.Colors.brand)
-                .frame(width: 32, alignment: .leading)
+            indexBadge(index, color: AppStyle.Colors.brand)
 
             // Weight input
             TextField("0", value: $weight, format: .number)
@@ -391,21 +343,16 @@ struct ExerciseTrackingView: View {
                 .keyboardType(.numberPad)
                 .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
-
-            Spacer().frame(width: 40)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .frame(height: SetsListRowMetrics.height)
         .background(AppStyle.Colors.brand.opacity(0.05))
     }
 
     private func futureRow(index: Int) -> some View {
         let display = displayValues(forFutureSetIndex: index)
         return HStack {
-            Text("\(index + 1)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.textTertiary)
-                .frame(width: 32, alignment: .leading)
+            indexBadge(index, color: AppStyle.Colors.textTertiary)
 
             Text(display.weight > 0 ? userUnit.formatted(display.weight) : "—")
                 .font(.system(size: 15, weight: .medium))
@@ -416,11 +363,9 @@ struct ExerciseTrackingView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(AppStyle.Colors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-
-            Spacer().frame(width: 40)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 11)
+        .frame(height: SetsListRowMetrics.height)
     }
 
     // Fill the gap between the current set and the next already-set future
@@ -459,10 +404,7 @@ struct ExerciseTrackingView: View {
 
     private func currentSetDisplayRow(index: Int) -> some View {
         HStack(spacing: 8) {
-            Text("\(index + 1)")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(AppStyle.Colors.brand)
-                .frame(width: 32, alignment: .leading)
+            indexBadge(index, color: AppStyle.Colors.brand)
 
             Text(weight > 0 ? userUnit.formatted(weight) : "—")
                 .frame(maxWidth: .infinity)
@@ -476,11 +418,9 @@ struct ExerciseTrackingView: View {
                 .setValueFieldStyle()
                 .contentShape(Rectangle())
                 .onTapGesture { isCurrentRowEditing = true }
-
-            Spacer().frame(width: 40)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .frame(height: SetsListRowMetrics.height)
         .background(AppStyle.Colors.brand.opacity(0.04))
     }
 

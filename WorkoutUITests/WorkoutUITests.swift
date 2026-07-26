@@ -51,6 +51,51 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testDiscardButtonRespondsOutsideItsTextLabel() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
+        app.buttons["Start Workout"].tap()
+
+        let finishButton = app.buttons["Finish Workout"]
+        XCTAssertTrue(finishButton.waitForExistence(timeout: 5), "Expected to land in-progress with a Finish Workout button")
+        finishButton.tap()
+
+        let discardButton = app.buttons["Discard"]
+        XCTAssertTrue(discardButton.waitForExistence(timeout: 5), "Expected WorkoutSummaryView with Discard button")
+
+        // Tap near the button's edge, away from its centered text label, to prove the whole
+        // button — not just the text glyphs — registers the tap.
+        discardButton.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+
+        let confirmation = app.staticTexts["Discard Workout?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5), "Tapping near the Discard button's edge should trigger the discard confirmation dialog")
+    }
+
+    @MainActor
+    func testAddExerciseIsInlineAndCancelButtonDirectlyTriggersConfirmationDuringActiveWorkout() throws {
+        let app = XCUIApplication()
+
+        XCTAssertTrue(app.buttons["Start Workout"].waitForExistence(timeout: 5), "Expected a generated workout ready to start")
+        app.buttons["Start Workout"].tap()
+
+        XCTAssertTrue(app.buttons["Finish Workout"].waitForExistence(timeout: 5), "Expected to land in-progress with a Finish Workout button")
+
+        // Add Exercise should be inline on the active workout screen, not buried in a toolbar menu.
+        XCTAssertTrue(app.buttons["Add Exercise"].waitForExistence(timeout: 5), "Add Exercise should be inline during an active workout")
+
+        let cancelButton = app.buttons["Cancel Workout"]
+        XCTAssertTrue(cancelButton.waitForExistence(timeout: 5), "Expected a direct cancel button, not a toolbar menu")
+        cancelButton.tap()
+
+        // Confirmation dialogs anchored to a toolbar item render as a compact popover on this iOS
+        // version rather than a bottom action sheet, and drop the .cancel-role button entirely in
+        // that presentation (dismissed by tapping outside instead) — matching how the Discard-flow
+        // confirmation is tested elsewhere in this file, only the trigger itself is verified here.
+        XCTAssertTrue(app.staticTexts["Cancel Workout?"].waitForExistence(timeout: 5), "Tapping the button should directly trigger the cancel confirmation, with no menu in between")
+    }
+
+    @MainActor
     func testStartWorkoutButtonHiddenWhileWorkoutActive() throws {
         let app = XCUIApplication()
 
@@ -151,6 +196,68 @@ final class WorkoutUITests: XCTestCase {
     }
 
     @MainActor
+    func testRestTimeFieldOpensPopoverAndUseDefaultResetsIt() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        let restField = app.buttons["restTimeField"]
+        XCTAssertTrue(restField.waitForExistence(timeout: 5))
+        XCTAssertTrue(restField.label.contains("Default"), "A newly added exercise should inherit the global rest-time default")
+
+        restField.tap()
+
+        let wheel = app.pickerWheels.firstMatch
+        XCTAssertTrue(wheel.waitForExistence(timeout: 5), "Expected the rest-time wheel picker to appear in a popover")
+        wheel.adjust(toPickerWheelValue: "2:00")
+
+        let useDefaultButton = app.buttons["Use Default"]
+        XCTAssertTrue(useDefaultButton.waitForExistence(timeout: 5), "Per-exercise popover should offer a way back to the global default")
+        useDefaultButton.tap()
+
+        XCTAssertTrue(restField.label.contains("Default"), "Use Default should reset the field back to inheriting the global default")
+    }
+
+    @MainActor
+    func testAddingAndSwipeDeletingASetRowInTemplateExerciseEditor() throws {
+        let app = XCUIApplication()
+
+        app.buttons["Templates"].tap()
+        app.buttons["Manage Templates"].tap()
+        app.buttons["Add Template"].tap()
+
+        app.buttons["addExerciseInTemplateEditor"].tap()
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        XCTAssertTrue(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 5))
+        app.staticTexts["Barbell Bench Press"].tap()
+
+        let weightFields = app.textFields.matching(identifier: "templateSetWeightField")
+        XCTAssertTrue(weightFields.firstMatch.waitForExistence(timeout: 5), "Expected the sets list to be visible")
+        let initialCount = weightFields.count
+
+        let addSetButton = app.buttons["addSetButton"]
+        XCTAssertTrue(addSetButton.waitForExistence(timeout: 5))
+        addSetButton.tap()
+        XCTAssertEqual(weightFields.count, initialCount + 1, "Add Set should append exactly one row")
+
+        weightFields.firstMatch.swipeLeft()
+        app.buttons["Delete"].tap()
+
+        XCTAssertEqual(weightFields.count, initialCount, "Swipe-to-delete should remove exactly one row")
+    }
+
+    @MainActor
     func testSwipingAnExerciseRowInTemplateEditorDeletesIt() throws {
         let app = XCUIApplication()
 
@@ -171,6 +278,7 @@ final class WorkoutUITests: XCTestCase {
         exerciseRow.swipeLeft()
         app.buttons["Delete"].tap()
 
+        XCTAssertTrue(app.navigationBars["New Template"].waitForExistence(timeout: 2), "Should still be in the template editor sheet right after deleting the last exercise")
         XCTAssertFalse(app.staticTexts["Barbell Bench Press"].waitForExistence(timeout: 2), "Exercise row should be gone after swipe-to-delete")
     }
 

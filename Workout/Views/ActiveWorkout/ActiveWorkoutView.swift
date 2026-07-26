@@ -71,21 +71,13 @@ struct ActiveWorkoutView: View {
             }
             if viewModel.state == .inProgress {
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            showExercisePicker = true
-                        } label: {
-                            Label("Add Exercise", systemImage: "plus")
-                        }
-                        Divider()
-                        Button(role: .destructive) {
-                            showCancelConfirmation = true
-                        } label: {
-                            Label("Cancel Workout", systemImage: "trash")
-                        }
+                    Button {
+                        showCancelConfirmation = true
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .semibold))
                     }
+                    .accessibilityLabel("Cancel Workout")
                 }
             }
         }
@@ -150,6 +142,12 @@ struct ActiveWorkoutView: View {
         VStack(spacing: 0) {
             elapsedTimerBar(viewModel: viewModel)
             exerciseList(viewModel: viewModel)
+
+            AddExerciseButton {
+                showExercisePicker = true
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
 
             // Finish button
             Button {

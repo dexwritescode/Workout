@@ -50,52 +50,18 @@ struct TemplateEditorView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                // Details
-                Section {
-                    TextField("Template Name", text: $name)
-                        .foregroundStyle(AppStyle.Colors.text)
-                    TextField("Description (optional)", text: $templateDescription)
-                        .foregroundStyle(AppStyle.Colors.text)
-                } header: {
-                    Text("Details").sectionHeader()
-                }
-                .listRowBackground(AppStyle.Colors.surface1)
-                .listRowSeparatorTint(AppStyle.Colors.border)
+            ScrollView {
+                VStack(spacing: 16) {
+                    detailsSection
+                    exercisesSection
 
-                // Exercises
-                Section {
-                    ForEach(sortedExercises, id: \.id) { te in
-                        exerciseRow(te)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    deleteExercise(te)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                .tint(.red)
-                            }
-                    }
-                } header: {
-                    Text("Exercises").sectionHeader()
-                }
-                .listRowBackground(AppStyle.Colors.surface1)
-                .listRowSeparatorTint(AppStyle.Colors.border)
-
-                // Add Exercise
-                Section {
-                    Button {
+                    AddExerciseButton {
                         showExercisePicker = true
-                    } label: {
-                        Label("Add Exercise", systemImage: "plus.circle.fill")
-                            .foregroundStyle(AppStyle.Colors.brand)
-                            .font(.system(size: 15, weight: .semibold))
                     }
                     .accessibilityIdentifier("addExerciseInTemplateEditor")
                 }
-                .listRowBackground(AppStyle.Colors.surface1)
+                .padding(16)
             }
-            .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
             .navigationTitle(existingTemplate != nil ? "Edit Template" : "New Template")
             .navigationBarTitleDisplayMode(.inline)
@@ -137,7 +103,59 @@ struct TemplateEditorView: View {
         }
     }
 
-    // MARK: - Exercise Row
+    // MARK: - Details Section
+
+    private var detailsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Details").sectionHeader()
+
+            VStack(spacing: 12) {
+                TextField("Template Name", text: $name)
+                    .foregroundStyle(AppStyle.Colors.text)
+                Divider().background(AppStyle.Colors.border)
+                TextField("Description (optional)", text: $templateDescription)
+                    .foregroundStyle(AppStyle.Colors.text)
+            }
+            .padding(16)
+            .background(AppStyle.Colors.surface1)
+            .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppStyle.Radius.card)
+                    .stroke(AppStyle.Colors.border, lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Exercises Section
+
+    private var exercisesSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Exercises").sectionHeader()
+
+            // Non-scrolling List (the outer ScrollView still owns scroll) purely to get native
+            // .swipeActions — same trick used by WorkoutStagingView's exercise list.
+            List {
+                ForEach(sortedExercises, id: \.id) { te in
+                    exerciseRow(te)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                deleteExercise(te)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 6, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .scrollDisabled(true)
+            .frame(height: CGFloat(max(1, sortedExercises.count)) * 74)
+        }
+    }
 
     private func exerciseRow(_ te: TemplateExercise) -> some View {
         Button {
@@ -166,17 +184,24 @@ struct TemplateEditorView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(AppStyle.Colors.textTertiary)
             }
-            .padding(.vertical, 4)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(AppStyle.Colors.surface1)
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppStyle.Radius.medium)
+                .stroke(AppStyle.Colors.border, lineWidth: 1)
+        )
     }
 
     // MARK: - Actions
 
     private func addExercise(_ exercise: Exercise) {
         guard let stagingTemplate else { return }
-        let te = TemplateExercise(order: stagingTemplate.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 90)
+        let te = TemplateExercise(order: stagingTemplate.exercises.count, targetSets: 3, targetReps: 10, restSeconds: 0)
         te.exercise = exercise
         te.template = stagingTemplate
         modelContext.insert(te)

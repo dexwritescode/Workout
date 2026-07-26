@@ -28,20 +28,8 @@ struct TemplateExerciseEditorView: View {
     @State private var setRows: [SetRow]
     @State private var restSeconds: Int
 
-    private var restOptions: [(label: String, seconds: Int)] {
-        let globalDefault = allSettings.first?.defaultRestTime ?? 90
-        let label = globalDefault % 60 == 0
-            ? "\(globalDefault / 60) min"
-            : "\(globalDefault) sec"
-        return [
-            ("Default (\(label))", 0),
-            ("30 sec", 30),
-            ("1 min",  60),
-            ("90 sec", 90),
-            ("2 min",  120),
-            ("3 min",  180),
-            ("5 min",  300),
-        ]
+    private var globalDefaultRestSeconds: Int {
+        allSettings.first?.defaultRestTime ?? 90
     }
 
     init(templateExercise: TemplateExercise, onSave: @escaping () -> Void = {}) {
@@ -64,16 +52,18 @@ struct TemplateExerciseEditorView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                heroImage
+            ScrollView {
+                VStack(spacing: 16) {
+                    heroImage
 
-                exerciseHeader
+                    exerciseHeader
 
-                setsSection
+                    setsSection
 
-                restSection
+                    restSection
+                }
+                .padding(16)
             }
-            .scrollContentBackground(.hidden)
             .background(AppStyle.Colors.background)
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: setRows) { oldRows, newRows in
@@ -115,65 +105,65 @@ struct TemplateExerciseEditorView: View {
     @ViewBuilder
     private var heroImage: some View {
         if templateExercise.exercise?.mediaFileName != nil {
-            Section {
-                ExerciseImageView(
-                    mediaFileName: templateExercise.exercise?.mediaFileName,
-                    animated: true,
-                    cornerRadius: 0,
-                    contentMode: .fit
-                )
-                .frame(maxWidth: .infinity)
-                .listRowInsets(EdgeInsets())
-            }
-            .listRowBackground(Color.clear)
+            ExerciseImageView(
+                mediaFileName: templateExercise.exercise?.mediaFileName,
+                animated: true,
+                cornerRadius: AppStyle.Radius.card,
+                contentMode: .fit
+            )
+            .frame(maxWidth: .infinity)
         }
     }
 
     // MARK: - Exercise Header
 
     private var exerciseHeader: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(templateExercise.exercise?.name ?? "Exercise")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(AppStyle.Colors.text)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(templateExercise.exercise?.name ?? "Exercise")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(AppStyle.Colors.text)
 
-                if let exercise = templateExercise.exercise {
-                    HStack(spacing: 6) {
-                        Text(exercise.difficulty.rawValue)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(AppStyle.difficultyColor(exercise.difficulty))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(AppStyle.difficultyColor(exercise.difficulty).opacity(0.13))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+            if let exercise = templateExercise.exercise {
+                HStack(spacing: 6) {
+                    Text(exercise.difficulty.rawValue)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(AppStyle.difficultyColor(exercise.difficulty))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(AppStyle.difficultyColor(exercise.difficulty).opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
 
-                        Text(exercise.primaryMusclesDisplayString)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(AppStyle.Colors.textSecondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
-                            .background(AppStyle.Colors.textSecondary.opacity(0.13))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-
-                    Text(exercise.equipmentDisplayString)
-                        .font(.system(size: 14))
+                    Text(exercise.primaryMusclesDisplayString)
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(AppStyle.Colors.textSecondary)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(AppStyle.Colors.textSecondary.opacity(0.13))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
+
+                Text(exercise.equipmentDisplayString)
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppStyle.Colors.textSecondary)
             }
-            .padding(.vertical, 4)
         }
-        .listRowBackground(AppStyle.Colors.surface1)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(AppStyle.Colors.surface1)
+        .clipShape(RoundedRectangle(cornerRadius: AppStyle.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppStyle.Radius.card)
+                .stroke(AppStyle.Colors.border, lineWidth: 1)
+        )
     }
 
     // MARK: - Sets Section
 
     private var setsSection: some View {
-        Section {
-            columnHeader
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sets").sectionHeader()
 
-            ForEach(Array(setRows.indices), id: \.self) { idx in
+            SetsListCard(rowCount: setRows.count, rowContent: { idx in
                 setRowView(idx: idx)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         if setRows.count > 1 {
@@ -185,34 +175,11 @@ struct TemplateExerciseEditorView: View {
                             .tint(.red)
                         }
                     }
-            }
-
-            Button {
+            }, onAddSet: {
                 let last = setRows.last
                 setRows.append(SetRow(weight: last?.weight ?? 0, reps: last?.reps ?? 10))
-            } label: {
-                Label("Add Set", systemImage: "plus.circle.fill")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(AppStyle.Colors.brand)
-            }
-        } header: {
-            Text("Sets").sectionHeader()
+            })
         }
-        .listRowBackground(AppStyle.Colors.surface1)
-        .listRowSeparatorTint(AppStyle.Colors.border)
-    }
-
-    private var columnHeader: some View {
-        HStack {
-            Text("SET")
-                .frame(width: 32, alignment: .leading)
-            Text("WEIGHT")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Text("REPS")
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(AppStyle.Colors.textTertiary)
     }
 
     private func setRowView(idx: Int) -> some View {
@@ -226,31 +193,26 @@ struct TemplateExerciseEditorView: View {
                 .keyboardType(.decimalPad)
                 .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
+                .accessibilityIdentifier("templateSetWeightField")
 
             TextField("10", value: $setRows[idx].reps, format: .number)
                 .keyboardType(.numberPad)
                 .frame(maxWidth: .infinity)
                 .setValueFieldStyle()
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 16)
+        .frame(height: SetsListRowMetrics.height)
     }
 
     // MARK: - Rest Section
 
     private var restSection: some View {
-        Section {
-            Picker("Rest between sets", selection: $restSeconds) {
-                ForEach(restOptions, id: \.seconds) { option in
-                    Text(option.label).tag(option.seconds)
-                }
-            }
-            .foregroundStyle(AppStyle.Colors.text)
-            .pickerStyle(.menu)
-            .tint(AppStyle.Colors.brand)
-        } header: {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Rest Between Sets").sectionHeader()
+
+            RestTimePickerField(seconds: $restSeconds, defaultSeconds: globalDefaultRestSeconds)
+                .frame(width: 140)
         }
-        .listRowBackground(AppStyle.Colors.surface1)
     }
 
     // MARK: - Save
